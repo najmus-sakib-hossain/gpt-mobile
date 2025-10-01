@@ -151,6 +151,20 @@ fun ChatScreen(
         listState.animateScrollToItem(groupedMessages.keys.size)
     }
 
+    // Auto-scroll when streaming messages are updated
+    LaunchedEffect(
+        openAIMessage.content,
+        anthropicMessage.content,
+        googleMessage.content,
+        groqMessage.content,
+        ollamaMessage.content,
+        geminiNano.content
+    ) {
+        if (!isIdle) {
+            listState.animateScrollToItem(groupedMessages.keys.size)
+        }
+    }
+
     Log.d("AIPackage", "AICore: ${aiCorePackageInfo?.versionName ?: "Not installed"}, Private Compute Services: ${privateComputePackageInfo?.versionName ?: "Not installed"}")
 
     Scaffold(
