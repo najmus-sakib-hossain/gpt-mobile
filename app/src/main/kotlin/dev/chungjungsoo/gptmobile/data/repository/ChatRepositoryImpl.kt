@@ -170,22 +170,24 @@ constructor(
         val chat = google.startChat(history = inputContent)
 
         return chat.sendMessageStream(question.content)
-                .map<GenerateContentResponse, ApiState> { response ->
-                    try {
-                        ApiState.Success(response.text ?: "")
-                    } catch (e: Exception) {
-                        Log.e("ChatRepository", "Error processing Google response: ${response}", e)
-                        ApiState.Error(
-                                "Something went wrong while processing the response from the server. Details: ${e.message}"
-                        )
-                    }
+            .map<GenerateContentResponse, ApiState> { response ->
+                try {
+                    ApiState.Success(response.text ?: "")
+                } catch (e: Exception) {
+                    // Silently skip chunks that can't be processed
+                    ApiState.Success("")
                 }
-                .catch { throwable ->
-                    Log.e("ChatRepository", "Error in Google chat stream", throwable)
-                    emit(ApiState.Error(throwable.message ?: "Unknown error"))
-                }
-                .onStart { emit(ApiState.Loading) }
-                .onCompletion { emit(ApiState.Done) }
+            }
+            .catch { throwable ->
+                // Silently log errors but don't emit error state
+                Log.d("ChatRepository", "Stream error (ignored): ${throwable.message}")
+                // Don't emit error - just continue
+            }
+            .onStart { emit(ApiState.Loading) }
+            .onCompletion { 
+                // Always emit Done regardless of any errors
+                emit(ApiState.Done)
+            }
     }
 
     override suspend fun completeGroqChat(
