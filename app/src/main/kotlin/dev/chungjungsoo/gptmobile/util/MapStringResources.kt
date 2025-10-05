@@ -71,9 +71,12 @@ fun generateAnthropicModelList(models: LinkedHashSet<String>) = models.mapIndexe
 @Composable
 fun generateGoogleModelList(models: LinkedHashSet<String>) = models.mapIndexed { index, model ->
     val (name, description) = when (index) {
-        0 -> stringResource(R.string.gemini_1_5_pro) to stringResource(R.string.gemini_1_5_pro_description)
-        1 -> stringResource(R.string.gemini_1_5_flash) to stringResource(R.string.gemini_1_5_flash_description)
-        2 -> stringResource(R.string.gemini_1_0_pro) to stringResource(R.string.gemini_1_0_pro_description)
+        0 -> stringResource(R.string.gemma_3n_e2b) to stringResource(R.string.gemma_3n_description)
+        1 -> stringResource(R.string.gemma_3n_e4b) to stringResource(R.string.gemma_3n_description)
+        2 -> stringResource(R.string.gemma_3_1b) to stringResource(R.string.gemma_3_1b_description)
+        3 -> stringResource(R.string.gemma_3_4b) to stringResource(R.string.gemma_3_4b_description)
+        4 -> stringResource(R.string.gemma_3_12b) to stringResource(R.string.gemma_3_12b_description)
+        5 -> stringResource(R.string.gemma_3_27b) to stringResource(R.string.gemma_3_27b_description)
         else -> "" to ""
     }
     APIModel(name, description, model)

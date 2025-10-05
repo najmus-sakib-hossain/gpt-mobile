@@ -71,7 +71,7 @@ fun SelectModelScreen(
                 when (platformType) {
                     ApiType.OPENAI -> 0
                     ApiType.ANTHROPIC -> 0
-                    ApiType.GOOGLE -> 1
+                    ApiType.GOOGLE -> 0
                     ApiType.GROQ -> 0
                     ApiType.OLLAMA -> 0
                 }
