@@ -127,7 +127,7 @@ fun OpponentChatBubble(
 private fun EditTextChip(onEditClick: () -> Unit) {
     AssistChip(
         onClick = onEditClick,
-        // label = { Text(stringResource(R.string.edit)) },
+        label = { Text(stringResource(R.string.edit)) },
         leadingIcon = {
             Icon(
                 Icons.Outlined.Edit,
@@ -142,8 +142,7 @@ private fun EditTextChip(onEditClick: () -> Unit) {
 private fun CopyTextChip(onCopyClick: () -> Unit) {
     AssistChip(
         onClick = onCopyClick,
-        // label = { Text(stringResource(R.string.copy_text)) },
-        label = "{ Text(stringResource(R.string.copy_text)) }",
+        label = { Text(stringResource(R.string.copy_text)) },
         leadingIcon = {
             Icon(
                 imageVector = ImageVector.vectorResource(id = R.drawable.ic_copy),
@@ -158,7 +157,7 @@ private fun CopyTextChip(onCopyClick: () -> Unit) {
 private fun RetryChip(onRetryClick: () -> Unit) {
     AssistChip(
         onClick = onRetryClick,
-        // label = { Text(stringResource(R.string.retry)) },
+         label = { Text(stringResource(R.string.retry)) },
         leadingIcon = {
             Icon(
                 Icons.Rounded.Refresh,
