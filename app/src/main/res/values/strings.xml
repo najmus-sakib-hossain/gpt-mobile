@@ -45,7 +45,38 @@
     <string name="claude_3_sonnet_description">Balanced model between intelligence and speed.</string>
     <string name="claude_3_haiku_description">Anthropic\'s fastest and most compact model.</string>
     <string name="select_google_model">Select Google Chat Model</string>
-    <string name="select_google_model_description">Gemma is a family of open, lightweight generative AI models made by Google. Only text inputs are supported.</string>
+    <string name="select_google_model_description">Gemini and Gemma are AI models made by Google. Gemini models support advanced features, while Gemma models are open and lightweight. Only text inputs are supported.</string>
+    
+    <!-- Gemini 2.5 models -->
+    <string name="gemini_2_5_flash_image" translatable="false">Gemini 2.5 Flash Image</string>
+    <string name="gemini_2_5_flash_image_preview" translatable="false">Gemini 2.5 Flash Image Preview</string>
+    <string name="gemini_2_5_pro" translatable="false">Gemini 2.5 Pro</string>
+    <string name="gemini_flash_latest" translatable="false">Gemini Flash Latest</string>
+    <string name="gemini_flash_lite_latest" translatable="false">Gemini Flash-Lite Latest</string>
+    <string name="gemini_2_5_flash" translatable="false">Gemini 2.5 Flash</string>
+    <string name="gemini_2_5_flash_lite" translatable="false">Gemini 2.5 Flash-Lite</string>
+    <string name="gemini_2_5_flash_image_description">State-of-the-art image generation and editing model. (Knowledge cutoff: Jun 2025)</string>
+    <string name="gemini_2_5_pro_description">Our most powerful reasoning model, which excels at coding and complex reasoning tasks. (Knowledge cutoff: Jan 2025)</string>
+    <string name="gemini_flash_latest_description">Our hybrid reasoning model, with a 1M token context window and thinking budgets. Points to gemini-2.5-flash-preview-09-2025. (Knowledge cutoff: Jan 2025)</string>
+    <string name="gemini_flash_lite_latest_description">Our smallest and most cost effective model, built for at scale usage. Points to gemini-2.5-flash-lite-preview-09-2025. (Knowledge cutoff: Jan 2025)</string>
+    <string name="gemini_2_5_flash_description">Our hybrid reasoning model, with a 1M token context window and thinking budgets. (Knowledge cutoff: Jan 2025)</string>
+    <string name="gemini_2_5_flash_lite_description">Our smallest and most cost effective model, built for at scale usage. (Knowledge cutoff: Jan 2025)</string>
+    
+    <!-- Gemini 2.0 models -->
+    <string name="gemini_2_0_flash" translatable="false">Gemini 2.0 Flash</string>
+    <string name="gemini_2_0_flash_lite" translatable="false">Gemini 2.0 Flash-Lite</string>
+    <string name="gemini_2_0_flash_description">Our most balanced multimodal model with great performance across all tasks. (Knowledge cutoff: Aug 2024)</string>
+    <string name="gemini_2_0_flash_lite_description">Our smallest and most cost effective model, built for at scale usage. (Knowledge cutoff: Aug 2024)</string>
+    
+    <!-- Gemini Robotics -->
+    <string name="gemini_robotics_er_1_5_preview" translatable="false">Gemini Robotics-ER 1.5 Preview</string>
+    <string name="gemini_robotics_er_1_5_preview_description">Gemini Robotics-ER (Embodied Reasoning) is a thinking model that enhances robots\' abilities to understand and interact with the physical world. (Knowledge cutoff: Unknown)</string>
+    
+    <!-- LearnLM -->
+    <string name="learnlm_2_0_flash_experimental" translatable="false">LearnLM 2.0 Flash Experimental</string>
+    <string name="learnlm_2_0_flash_experimental_description">LearnLM 2.0 Flash Experimental. (Knowledge cutoff: Unknown)</string>
+    
+    <!-- Gemma models -->
     <string name="gemma_3n_e2b" translatable="false">Gemma 3n E2B</string>
     <string name="gemma_3n_e4b" translatable="false">Gemma 3n E4B</string>
     <string name="gemma_3_1b" translatable="false">Gemma 3 1B</string>

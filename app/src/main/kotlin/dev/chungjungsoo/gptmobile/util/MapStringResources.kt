@@ -71,12 +71,28 @@ fun generateAnthropicModelList(models: LinkedHashSet<String>) = models.mapIndexe
 @Composable
 fun generateGoogleModelList(models: LinkedHashSet<String>) = models.mapIndexed { index, model ->
     val (name, description) = when (index) {
-        0 -> stringResource(R.string.gemma_3n_e2b) to stringResource(R.string.gemma_3n_description)
-        1 -> stringResource(R.string.gemma_3n_e4b) to stringResource(R.string.gemma_3n_description)
-        2 -> stringResource(R.string.gemma_3_1b) to stringResource(R.string.gemma_3_1b_description)
-        3 -> stringResource(R.string.gemma_3_4b) to stringResource(R.string.gemma_3_4b_description)
-        4 -> stringResource(R.string.gemma_3_12b) to stringResource(R.string.gemma_3_12b_description)
-        5 -> stringResource(R.string.gemma_3_27b) to stringResource(R.string.gemma_3_27b_description)
+        // Gemini 2.5 models
+        0 -> stringResource(R.string.gemini_2_5_flash_image) to stringResource(R.string.gemini_2_5_flash_image_description)
+        1 -> stringResource(R.string.gemini_2_5_flash_image_preview) to stringResource(R.string.gemini_2_5_flash_image_description)
+        2 -> stringResource(R.string.gemini_2_5_pro) to stringResource(R.string.gemini_2_5_pro_description)
+        3 -> stringResource(R.string.gemini_flash_latest) to stringResource(R.string.gemini_flash_latest_description)
+        4 -> stringResource(R.string.gemini_flash_lite_latest) to stringResource(R.string.gemini_flash_lite_latest_description)
+        5 -> stringResource(R.string.gemini_2_5_flash) to stringResource(R.string.gemini_2_5_flash_description)
+        6 -> stringResource(R.string.gemini_2_5_flash_lite) to stringResource(R.string.gemini_2_5_flash_lite_description)
+        // Gemini 2.0 models
+        7 -> stringResource(R.string.gemini_2_0_flash) to stringResource(R.string.gemini_2_0_flash_description)
+        8 -> stringResource(R.string.gemini_2_0_flash_lite) to stringResource(R.string.gemini_2_0_flash_lite_description)
+        // Gemini Robotics
+        9 -> stringResource(R.string.gemini_robotics_er_1_5_preview) to stringResource(R.string.gemini_robotics_er_1_5_preview_description)
+        // LearnLM
+        10 -> stringResource(R.string.learnlm_2_0_flash_experimental) to stringResource(R.string.learnlm_2_0_flash_experimental_description)
+        // Gemma models
+        11 -> stringResource(R.string.gemma_3n_e2b) to stringResource(R.string.gemma_3n_description)
+        12 -> stringResource(R.string.gemma_3n_e4b) to stringResource(R.string.gemma_3n_description)
+        13 -> stringResource(R.string.gemma_3_1b) to stringResource(R.string.gemma_3_1b_description)
+        14 -> stringResource(R.string.gemma_3_4b) to stringResource(R.string.gemma_3_4b_description)
+        15 -> stringResource(R.string.gemma_3_12b) to stringResource(R.string.gemma_3_12b_description)
+        16 -> stringResource(R.string.gemma_3_27b) to stringResource(R.string.gemma_3_27b_description)
         else -> "" to ""
     }
     APIModel(name, description, model)

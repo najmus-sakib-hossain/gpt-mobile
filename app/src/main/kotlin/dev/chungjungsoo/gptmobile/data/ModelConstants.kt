@@ -6,7 +6,30 @@ object ModelConstants {
     // LinkedHashSet should be used to guarantee item order
     val openaiModels = linkedSetOf("gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4")
     val anthropicModels = linkedSetOf("claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307")
-    val googleModels = linkedSetOf("gemma-3n-e2b-it", "gemma-3n-e4b-it", "gemma-3-1b-it", "gemma-3-4b-it", "gemma-3-12b-it", "gemma-3-27b-it")
+    val googleModels = linkedSetOf(
+        // Gemini 2.5 models
+        "gemini-2.5-flash-image",
+        "gemini-2.5-flash-image-preview",
+        "gemini-2.5-pro",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        // Gemini 2.0 models
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        // Gemini Robotics
+        "gemini-robotics-er-1.5-preview",
+        // LearnLM
+        "learnlm-2.0-flash-experimental",
+        // Gemma models
+        "gemma-3n-e2b-it",
+        "gemma-3n-e4b-it",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it"
+    )
     val groqModels = linkedSetOf("llama-3.2-3b-preview", "llama-3.2-1b-preview", "llama-3.1-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it")
     val ollamaModels = linkedSetOf<String>()
 
