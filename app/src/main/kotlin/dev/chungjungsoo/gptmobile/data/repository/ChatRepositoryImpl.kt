@@ -141,9 +141,9 @@ constructor(
             temperature = platform.temperature
             topP = platform.topP
         }
-        // All Gemma 3 models support system instruction
+        // Only Gemini models support system instruction, not Gemma models
         val supportsSystemInstruction =
-                platform.model?.startsWith("gemma", ignoreCase = true) == true
+                platform.model?.startsWith("gemini", ignoreCase = true) == true
         val systemInstruction =
                 if (supportsSystemInstruction)
                         content { text(platform.systemPrompt ?: ModelConstants.DEFAULT_PROMPT) }
