@@ -139,7 +139,6 @@ fun HomeScreen(
             modifier = Modifier.padding(innerPadding),
             state = listState
         ) {
-            item { ChatsTitle(scrollBehavior) }
             itemsIndexed(chatListState.chats, key = { _, it -> it.id }) { idx, chatRoom ->
                 val usingPlatform = chatRoom.enabledPlatform.joinToString(", ") { platformTitles[it] ?: "" }
                 ListItem(
@@ -250,9 +249,9 @@ fun HomeTopAppBar(
             } else {
                 Text(
                     modifier = Modifier.padding(4.dp),
-                    text = stringResource(R.string.chats),
+                    text = "Friday",
                     maxLines = 1,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = scrollBehavior.state.overlappedFraction),
+                    color = MaterialTheme.colorScheme.onSurface,
                     overflow = TextOverflow.Ellipsis
                 )
             }
