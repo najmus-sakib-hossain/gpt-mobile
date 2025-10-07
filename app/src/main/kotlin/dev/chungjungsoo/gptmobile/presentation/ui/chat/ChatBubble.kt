@@ -1,6 +1,7 @@
 package dev.chungjungsoo.gptmobile.presentation.ui.chat
 
 import android.text.util.Linkify
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -161,12 +163,22 @@ private fun BrandText(apiType: ApiType) {
             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
             .fillMaxWidth()
     ) {
-        Text(
-            modifier = Modifier.align(Alignment.CenterEnd),
-            text = getPlatformAPIBrandText(apiType),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (apiType == ApiType.GOOGLE) {
+            Icon(
+                imageVector = ImageVector.vectorResource(id = R.drawable.ic_google),
+                contentDescription = "Google Logo",
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(24.dp)
+            )
+        } else {
+            Text(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                text = getPlatformAPIBrandText(apiType),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

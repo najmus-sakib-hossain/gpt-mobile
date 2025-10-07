@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -166,13 +168,25 @@ fun HomeScreen(
                                 onCheckedChange = { homeViewModel.selectChat(idx) }
                             )
                         } else {
-                            Icon(
-                                ImageVector.vectorResource(id = R.drawable.ic_rounded_chat),
-                                contentDescription = stringResource(R.string.chat_icon)
-                            )
+                            if (chatRoom.enabledPlatform.contains(ApiType.GOOGLE)) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_google),
+                                    contentDescription = "Google Logo",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.ic_rounded_chat),
+                                    contentDescription = stringResource(R.string.chat_icon)
+                                )
+                            }
                         }
                     },
-                    supportingContent = { Text(text = stringResource(R.string.using_certain_platform, usingPlatform)) }
+                    supportingContent = { 
+                        if (!chatRoom.enabledPlatform.contains(ApiType.GOOGLE)) {
+                            Text(text = stringResource(R.string.using_certain_platform, usingPlatform))
+                        }
+                    }
                 )
             }
         }

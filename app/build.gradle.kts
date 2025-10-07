@@ -99,6 +99,10 @@ dependencies {
     // Markdown
     implementation(libs.compose.markdown)
 
+    // Coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
+
     // Navigation
     implementation(libs.hilt.navigation)
     implementation(libs.androidx.navigation)
