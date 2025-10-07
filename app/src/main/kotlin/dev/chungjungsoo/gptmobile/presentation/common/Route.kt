@@ -18,6 +18,11 @@ object Route {
     const val CHAT_LIST = "chat_list"
     const val CHAT_ROOM = "chat_room/{chatRoomId}?enabled={enabledPlatforms}"
 
+    const val VARIANTS = "variants"
+    const val AUTOMATIONS = "automations"
+    const val AGENTS = "agents"
+    const val LIBRARY = "library"
+
     const val SETTING_ROUTE = "setting_route"
     const val SETTINGS = "settings"
     const val OPENAI_SETTINGS = "openai_settings"

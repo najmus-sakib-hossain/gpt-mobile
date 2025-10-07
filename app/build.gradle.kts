@@ -103,6 +103,9 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
 
+    // Material Icons Extended
+    implementation(libs.androidx.compose.material.icons.extended)
+
     // Navigation
     implementation(libs.hilt.navigation)
     implementation(libs.androidx.navigation)

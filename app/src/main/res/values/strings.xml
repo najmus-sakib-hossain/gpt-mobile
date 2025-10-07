@@ -227,4 +227,9 @@
     <string name="edit_question">Edit User Message</string>
     <string name="user_message">User Message</string>
     <string name="export_chat">Export Chat</string>
+    <string name="home">Home</string>
+    <string name="variants">Variants</string>
+    <string name="automations">Automations</string>
+    <string name="agents">Agents</string>
+    <string name="library">Library</string>
 </resources>

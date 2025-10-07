@@ -2,18 +2,45 @@ package dev.chungjungsoo.gptmobile.presentation.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SmartToy
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import dev.chungjungsoo.gptmobile.R
 import dev.chungjungsoo.gptmobile.data.model.ApiType
 import dev.chungjungsoo.gptmobile.presentation.ui.chat.ChatScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.home.HomeScreen
@@ -30,26 +57,122 @@ import dev.chungjungsoo.gptmobile.presentation.ui.setup.SetupViewModel
 import dev.chungjungsoo.gptmobile.presentation.ui.setup.TokenInputScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.startscreen.StartScreen
 
-@Composable
-fun SetupNavGraph(navController: NavHostController) {
-    NavHost(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        navController = navController,
-        startDestination = Route.CHAT_LIST
-    ) {
-        homeScreenNavigation(navController)
-        startScreenNavigation(navController)
-        setupNavigation(navController)
-        settingNavigation(navController)
-        chatScreenNavigation(navController)
-    }
-}
-
 fun NavGraphBuilder.startScreenNavigation(navController: NavHostController) {
     composable(Route.GET_STARTED) {
         StartScreen { navController.navigate(Route.SETUP_ROUTE) }
+    }
+}
+
+data class BottomNavItem(
+    val title: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+    val route: String
+)
+
+@Composable
+fun SetupNavGraph(navController: NavHostController) {
+    val bottomNavItems = listOf(
+        BottomNavItem(
+            title = stringResource(R.string.home),
+            selectedIcon = Icons.Filled.Home,
+            unselectedIcon = Icons.Outlined.Home,
+            route = Route.CHAT_LIST
+        ),
+        BottomNavItem(
+            title = stringResource(R.string.variants),
+            selectedIcon = Icons.Filled.SmartToy,
+            unselectedIcon = Icons.Outlined.SmartToy,
+            route = Route.VARIANTS
+        ),
+        BottomNavItem(
+            title = stringResource(R.string.automations),
+            selectedIcon = Icons.Filled.Settings,
+            unselectedIcon = Icons.Outlined.Settings,
+            route = Route.AUTOMATIONS
+        ),
+        BottomNavItem(
+            title = stringResource(R.string.agents),
+            selectedIcon = Icons.Filled.Person,
+            unselectedIcon = Icons.Outlined.Person,
+            route = Route.AGENTS
+        ),
+        BottomNavItem(
+            title = stringResource(R.string.library),
+            selectedIcon = Icons.Filled.LibraryBooks,
+            unselectedIcon = Icons.Outlined.LibraryBooks,
+            route = Route.LIBRARY
+        )
+    )
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                bottomNavItems.forEach { item ->
+                    val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                    NavigationBarItem(
+                        selected = selected,
+                        onClick = {
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                contentDescription = item.title
+                            )
+                        },
+                        label = { Text(item.title, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        NavHost(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            navController = navController,
+            startDestination = Route.CHAT_LIST
+        ) {
+            homeScreenNavigation(navController)
+            startScreenNavigation(navController)
+            setupNavigation(navController)
+            settingNavigation(navController)
+            chatScreenNavigation(navController)
+            composable(Route.VARIANTS) {
+                // Placeholder for Variants screen
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Variants Screen", style = MaterialTheme.typography.headlineMedium)
+                }
+            }
+            composable(Route.AUTOMATIONS) {
+                // Placeholder for Automations screen
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Automations Screen", style = MaterialTheme.typography.headlineMedium)
+                }
+            }
+            composable(Route.AGENTS) {
+                // Placeholder for Agents screen
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Agents Screen", style = MaterialTheme.typography.headlineMedium)
+                }
+            }
+            composable(Route.LIBRARY) {
+                // Placeholder for Library screen
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Library Screen", style = MaterialTheme.typography.headlineMedium)
+                }
+            }
+        }
     }
 }
 
