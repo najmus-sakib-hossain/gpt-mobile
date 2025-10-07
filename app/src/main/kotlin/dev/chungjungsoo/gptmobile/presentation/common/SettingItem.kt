@@ -50,7 +50,7 @@ fun SettingItem(
             trailingContent = {
                 if (showTrailingIcon) {
                     Icon(
-                        ImageVector.vectorResource(id = R.drawable.ic_round_arrow_right),
+                        ImageVector.vectorResource(id = R.drawable.ic_chevron_right),
                         contentDescription = stringResource(R.string.arrow_icon)
                     )
                 }
@@ -71,7 +71,7 @@ fun SettingItem(
             trailingContent = {
                 if (showTrailingIcon) {
                     Icon(
-                        ImageVector.vectorResource(id = R.drawable.ic_round_arrow_right),
+                        ImageVector.vectorResource(id = R.drawable.ic_chevron_right),
                         contentDescription = stringResource(R.string.arrow_icon)
                     )
                 }
