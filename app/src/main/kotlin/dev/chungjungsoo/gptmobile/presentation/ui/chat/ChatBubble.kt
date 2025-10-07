@@ -1,6 +1,7 @@
 package dev.chungjungsoo.gptmobile.presentation.ui.chat
 
 import android.text.util.Linkify
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,7 +55,8 @@ fun UserChatBubble(
         Card(
             modifier = modifier,
             shape = RoundedCornerShape(32.dp),
-            colors = cardColor
+            colors = cardColor,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
             MarkdownText(
                 modifier = Modifier.padding(16.dp),
@@ -85,17 +87,18 @@ fun OpponentChatBubble(
     onRetryClick: () -> Unit = {}
 ) {
     val cardColor = CardColors(
-        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        disabledContentColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.38f),
-        disabledContainerColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f)
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+        disabledContentColor = MaterialTheme.colorScheme.primaryContainer,
+        disabledContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
     )
 
     Column(modifier = modifier) {
         Column(horizontalAlignment = Alignment.End) {
             Card(
                 shape = RoundedCornerShape(32.dp),
-                colors = cardColor
+                colors = cardColor,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 MarkdownText(
                     modifier = Modifier.padding(24.dp),
