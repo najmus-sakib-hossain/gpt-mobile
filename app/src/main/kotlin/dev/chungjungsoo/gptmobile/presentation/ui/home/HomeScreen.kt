@@ -160,7 +160,13 @@ fun HomeScreen(
                         )
                         .padding(start = 8.dp, end = 8.dp)
                         .animateItem(),
-                    headlineContent = { Text(text = chatRoom.title) },
+                    headlineContent = { 
+                        Text(
+                            text = chatRoom.title,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
                     leadingContent = {
                         if (chatListState.isSelectionMode) {
                             Checkbox(
