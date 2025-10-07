@@ -8,18 +8,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -128,47 +126,32 @@ fun OpponentChatBubble(
 
 @Composable
 private fun EditTextChip(onEditClick: () -> Unit) {
-    AssistChip(
-        onClick = onEditClick,
-        label = { Text(stringResource(R.string.edit)) },
-        leadingIcon = {
-            Icon(
-                Icons.Outlined.Edit,
-                contentDescription = stringResource(R.string.edit),
-                modifier = Modifier.size(AssistChipDefaults.IconSize)
-            )
-        }
-    )
+    IconButton(onClick = onEditClick) {
+        Icon(
+            Icons.Outlined.Edit,
+            contentDescription = stringResource(R.string.edit)
+        )
+    }
 }
 
 @Composable
 private fun CopyTextChip(onCopyClick: () -> Unit) {
-    AssistChip(
-        onClick = onCopyClick,
-        label = { Text(stringResource(R.string.copy_text)) },
-        leadingIcon = {
-            Icon(
-                imageVector = ImageVector.vectorResource(id = R.drawable.ic_copy),
-                contentDescription = stringResource(R.string.copy_text),
-                modifier = Modifier.size(AssistChipDefaults.IconSize)
-            )
-        }
-    )
+    IconButton(onClick = onCopyClick) {
+        Icon(
+            imageVector = ImageVector.vectorResource(id = R.drawable.ic_copy),
+            contentDescription = stringResource(R.string.copy_text)
+        )
+    }
 }
 
 @Composable
 private fun RetryChip(onRetryClick: () -> Unit) {
-    AssistChip(
-        onClick = onRetryClick,
-         label = { Text(stringResource(R.string.retry)) },
-        leadingIcon = {
-            Icon(
-                Icons.Rounded.Refresh,
-                contentDescription = stringResource(R.string.retry),
-                modifier = Modifier.size(AssistChipDefaults.IconSize)
-            )
-        }
-    )
+    IconButton(onClick = onRetryClick) {
+        Icon(
+            Icons.Rounded.Refresh,
+            contentDescription = stringResource(R.string.retry)
+        )
+    }
 }
 
 @Composable
