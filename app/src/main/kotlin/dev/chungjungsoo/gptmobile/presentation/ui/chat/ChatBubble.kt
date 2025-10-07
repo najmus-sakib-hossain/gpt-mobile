@@ -158,20 +158,12 @@ private fun RetryChip(onRetryClick: () -> Unit) {
 
 @Composable
 private fun BrandText(apiType: ApiType) {
-    Box(
-        modifier = Modifier
-            .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-            .fillMaxWidth()
-    ) {
-        if (apiType == ApiType.GOOGLE) {
-            Icon(
-                imageVector = ImageVector.vectorResource(id = R.drawable.ic_google),
-                contentDescription = "Google Logo",
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(24.dp)
-            )
-        } else {
+    if (apiType != ApiType.GOOGLE) {
+        Box(
+            modifier = Modifier
+                .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .fillMaxWidth()
+        ) {
             Text(
                 modifier = Modifier.align(Alignment.CenterEnd),
                 text = getPlatformAPIBrandText(apiType),

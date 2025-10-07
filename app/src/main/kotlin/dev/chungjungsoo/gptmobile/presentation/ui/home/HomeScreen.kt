@@ -36,6 +36,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +77,8 @@ import dev.chungjungsoo.gptmobile.data.dto.Platform
 import dev.chungjungsoo.gptmobile.data.model.ApiType
 import dev.chungjungsoo.gptmobile.presentation.common.PlatformCheckBoxItem
 import dev.chungjungsoo.gptmobile.util.getPlatformTitleResources
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -104,10 +110,21 @@ fun HomeScreen(
         homeViewModel.disableSelectionMode()
     }
 
-    Scaffold(
-        modifier = Modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("Drawer content here", modifier = Modifier.padding(16.dp))
+            }
+        }
+    ) {
+        Scaffold(
+            modifier = Modifier
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = {
             HomeTopAppBar(
                 chatListState.isSelectionMode,
                 selectedChats = chatListState.selected.count { it },
@@ -121,7 +138,8 @@ fun HomeScreen(
                 },
                 navigationOnClick = {
                     homeViewModel.disableSelectionMode()
-                }
+                },
+                onMenuClick = { scope.launch { drawerState.open() } }
             )
         },
         floatingActionButton = {
@@ -222,6 +240,7 @@ fun HomeScreen(
         }
     }
 }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -230,7 +249,8 @@ fun HomeTopAppBar(
     selectedChats: Int,
     scrollBehavior: TopAppBarScrollBehavior,
     actionOnClick: () -> Unit,
-    navigationOnClick: () -> Unit
+    navigationOnClick: () -> Unit,
+    onMenuClick: () -> Unit
 ) {
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -268,6 +288,16 @@ fun HomeTopAppBar(
                         imageVector = Icons.Rounded.Close,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         contentDescription = stringResource(R.string.close)
+                    )
+                }
+            } else {
+                IconButton(
+                    modifier = Modifier.padding(4.dp),
+                    onClick = onMenuClick
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.ic_hamburger),
+                        contentDescription = "Menu"
                     )
                 }
             }
