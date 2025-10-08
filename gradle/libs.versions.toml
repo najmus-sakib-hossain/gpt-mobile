@@ -22,7 +22,7 @@ serialization = "1.7.3" # Should not update due to kotlin version
 splashscreen = "1.0.1"
 room = "2.6.1"
 coil = "2.7.0"
-materialIconsExtended = "1.6.8"
+materialIconsExtended = "1.7.8"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -74,4 +74,3 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-serialization = { id = "plugin.serialization", version.ref = "kotlin" }
-
