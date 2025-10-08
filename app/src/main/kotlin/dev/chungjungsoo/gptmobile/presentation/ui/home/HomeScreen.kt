@@ -1,12 +1,20 @@
 package dev.chungjungsoo.gptmobile.presentation.ui.home
 
+import android.annotation.SuppressLint
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.material3.DrawerState
+import kotlinx.coroutines.CoroutineScope
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -65,8 +73,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -80,16 +86,17 @@ import dev.chungjungsoo.gptmobile.util.getPlatformTitleResources
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
     settingOnClick: () -> Unit,
     onExistingChatClick: (ChatRoom) -> Unit,
-    navigateToNewChat: (enabledPlatforms: List<ApiType>) -> Unit
+    navigateToNewChat: (enabledPlatforms: List<ApiType>) -> Unit,
+    drawerState: DrawerState,
+    scope: CoroutineScope
 ) {
-    val platformTitles = getPlatformTitleResources()
-    val listState = rememberLazyListState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val chatListState by homeViewModel.chatListState.collectAsStateWithLifecycle()
     val showSelectModelDialog by homeViewModel.showSelectModelDialog.collectAsStateWithLifecycle()
@@ -110,18 +117,7 @@ fun HomeScreen(
         homeViewModel.disableSelectionMode()
     }
 
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                Text("Drawer content here", modifier = Modifier.padding(16.dp))
-            }
-        }
-    ) {
-        Scaffold(
+    Scaffold(
             modifier = Modifier
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
@@ -143,7 +139,7 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            NewChatButton(expanded = listState.isScrollingUp(), onClick = {
+            NewChatButton(expanded = true, onClick = {
                 val enabledApiTypes = platformState.filter { it.enabled }.map { it.name }
                 if (enabledApiTypes.size == 1) {
                     // Navigate to new chat directly if only one platform is enabled
@@ -152,94 +148,33 @@ fun HomeScreen(
                     homeViewModel.openSelectModelDialog()
                 }
             })
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.padding(innerPadding),
-            state = listState
-        ) {
-            itemsIndexed(chatListState.chats, key = { _, it -> it.id }) { idx, chatRoom ->
-                val usingPlatform = chatRoom.enabledPlatform.joinToString(", ") { platformTitles[it] ?: "" }
-                ListItem(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onLongClick = {
-                                homeViewModel.enableSelectionMode()
-                                homeViewModel.selectChat(idx)
-                            },
-                            onClick = {
-                                if (chatListState.isSelectionMode) {
-                                    homeViewModel.selectChat(idx)
-                                } else {
-                                    onExistingChatClick(chatRoom)
-                                }
-                            }
-                        )
-                        .padding(start = 8.dp, end = 8.dp)
-                        .animateItem(),
-                    headlineContent = { 
-                        Text(
-                            text = chatRoom.title,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    leadingContent = {
-                        if (chatListState.isSelectionMode) {
-                            Checkbox(
-                                checked = chatListState.selected[idx],
-                                onCheckedChange = { homeViewModel.selectChat(idx) }
-                            )
-                        } else {
-                            if (chatRoom.enabledPlatform.contains(ApiType.GOOGLE)) {
-                                Icon(
-                                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_google),
-                                    contentDescription = "Google Logo",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            } else {
-                                Icon(
-                                    ImageVector.vectorResource(id = R.drawable.ic_rounded_chat),
-                                    contentDescription = stringResource(R.string.chat_icon)
-                                )
-                            }
-                        }
-                    },
-                    supportingContent = { 
-                        if (!chatRoom.enabledPlatform.contains(ApiType.GOOGLE)) {
-                            Text(text = stringResource(R.string.using_certain_platform, usingPlatform))
-                        }
-                    }
-                )
-            }
-        }
+        },
+        content = { }
+    )
 
-        if (showSelectModelDialog) {
-            SelectPlatformDialog(
-                platformState,
-                onDismissRequest = { homeViewModel.closeSelectModelDialog() },
-                onConfirmation = {
-                    homeViewModel.closeSelectModelDialog()
-                    navigateToNewChat(it)
-                },
-                onPlatformSelect = { homeViewModel.updateCheckedState(it) }
-            )
-        }
-
-        if (showDeleteWarningDialog) {
-            DeleteWarningDialog(
-                onDismissRequest = homeViewModel::closeDeleteWarningDialog,
-                onConfirm = {
-                    val deletedChatRoomCount = chatListState.selected.count { it }
-                    homeViewModel.deleteSelectedChats()
-                    Toast.makeText(context, context.getString(R.string.deleted_chats, deletedChatRoomCount), Toast.LENGTH_SHORT).show()
-                    homeViewModel.closeDeleteWarningDialog()
-                }
-            )
-        }
+    if (showSelectModelDialog) {
+        SelectPlatformDialog(
+            platformState,
+            onDismissRequest = { homeViewModel.closeSelectModelDialog() },
+            onConfirmation = {
+                homeViewModel.closeSelectModelDialog()
+                navigateToNewChat(it)
+            },
+            onPlatformSelect = { homeViewModel.updateCheckedState(it) }
+        )
     }
-}
+
+    if (showDeleteWarningDialog) {
+        DeleteWarningDialog(
+            onDismissRequest = homeViewModel::closeDeleteWarningDialog,
+            onConfirm = {
+                val deletedChatRoomCount = chatListState.selected.count { it }
+                homeViewModel.deleteSelectedChats()
+                Toast.makeText(context, context.getString(R.string.deleted_chats, deletedChatRoomCount), Toast.LENGTH_SHORT).show()
+                homeViewModel.closeDeleteWarningDialog()
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -313,13 +248,6 @@ fun HomeTopAppBar(
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         contentDescription = stringResource(R.string.delete)
                     )
-                }
-            } else {
-                IconButton(
-                    modifier = Modifier.padding(4.dp),
-                    onClick = actionOnClick
-                ) {
-                    Icon(imageVector = Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
                 }
             }
         },
