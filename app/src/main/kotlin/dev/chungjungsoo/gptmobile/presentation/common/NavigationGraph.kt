@@ -44,6 +44,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.material3.ModalNavigationDrawer
 
 fun NavGraphBuilder.startScreenNavigation(navController: NavHostController) {
     composable(Route.GET_STARTED) {
@@ -55,29 +56,35 @@ fun NavGraphBuilder.startScreenNavigation(navController: NavHostController) {
 fun SetupNavGraph(navController: NavHostController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
-    ) { innerPadding ->
-        // Remove top padding from innerPadding so screens with their own top bars are not pushed down
-        val contentPadding = PaddingValues(
-            start = innerPadding.calculateLeftPadding(LayoutDirection.Ltr),
-            top = 0.dp,
-            end = innerPadding.calculateRightPadding(LayoutDirection.Ltr),
-            bottom = innerPadding.calculateBottomPadding()
-        )
-        NavHost(
-            modifier = Modifier
-                .padding(contentPadding)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            navController = navController,
-            startDestination = Route.CHAT_LIST
-        ) {
-            homeScreenNavigation(navController, drawerState, scope)
-            startScreenNavigation(navController)
-            setupNavigation(navController)
-            settingNavigation(navController)
-            chatScreenNavigation(navController)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawerContent(navController, drawerState, scope, settingOnClick = { navController.navigate(Route.SETTING_ROUTE) { launchSingleTop = true } })
+        }
+    ) {
+        Scaffold(
+            bottomBar = { BottomNavigationBar(navController) }
+        ) { innerPadding ->
+            // Remove top padding from innerPadding so screens with their own top bars are not pushed down
+            val contentPadding = PaddingValues(
+                start = innerPadding.calculateLeftPadding(LayoutDirection.Ltr),
+                top = 0.dp,
+                end = innerPadding.calculateRightPadding(LayoutDirection.Ltr),
+                bottom = innerPadding.calculateBottomPadding()
+            )
+            NavHost(
+                modifier = Modifier
+                    .padding(contentPadding)
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                navController = navController,
+                startDestination = Route.CHAT_LIST
+            ) {
+                homeScreenNavigation(navController, drawerState, scope)
+                startScreenNavigation(navController)
+                setupNavigation(navController)
+                settingNavigation(navController)
+                chatScreenNavigation(navController)
             composable(Route.VARIANTS) {
                 // Placeholder for Variants screen
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -114,6 +121,7 @@ fun SetupNavGraph(navController: NavHostController) {
             }
         }
     }
+}
 }
 fun NavGraphBuilder.setupNavigation(
     navController: NavHostController
