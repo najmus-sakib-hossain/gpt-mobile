@@ -291,6 +291,7 @@ private fun ModelDialog(
         ApiType.GOOGLE -> googleModels
         ApiType.GROQ -> groqModels
         ApiType.OLLAMA -> ollamaModels
+        ApiType.OFFLINE_AI -> linkedSetOf()
     }
     val availableModels = when (apiType) {
         ApiType.OPENAI -> generateOpenAIModelList(models = modelList)
@@ -298,6 +299,7 @@ private fun ModelDialog(
         ApiType.GOOGLE -> generateGoogleModelList(models = modelList)
         ApiType.GROQ -> generateGroqModelList(models = modelList)
         ApiType.OLLAMA -> listOf()
+        ApiType.OFFLINE_AI -> listOf()
     }
     val configuration = LocalConfiguration.current
     var model by remember { mutableStateOf(initModel) }

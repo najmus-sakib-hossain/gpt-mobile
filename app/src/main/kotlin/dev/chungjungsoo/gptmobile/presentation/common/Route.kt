@@ -22,6 +22,10 @@ object Route {
     const val AUTOMATIONS = "automations"
     const val AGENTS = "agents"
     const val LIBRARY = "library"
+    
+    // Offline AI Model Routes
+    const val OFFLINE_MODEL_BROWSER = "offlineModelBrowser"
+    const val OFFLINE_MODEL_DETAIL = "offlineModelDetail/{modelId}"
 
     const val SETTING_ROUTE = "setting_route"
     const val SETTINGS = "settings"

@@ -28,6 +28,9 @@ import dev.chungjungsoo.gptmobile.presentation.ui.home.LibraryScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.AboutScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.LicenseScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.PlatformSettingScreen
+import java.net.URLEncoder
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.SettingScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.SettingViewModel
 import dev.chungjungsoo.gptmobile.presentation.ui.setup.SelectModelScreen
@@ -45,6 +48,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.material3.ModalNavigationDrawer
+import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.ModelBrowserScreen
+import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.ModelDetailScreen
 
 fun NavGraphBuilder.startScreenNavigation(navController: NavHostController) {
     composable(Route.GET_STARTED) {
@@ -85,6 +90,7 @@ fun SetupNavGraph(navController: NavHostController) {
                 setupNavigation(navController)
                 settingNavigation(navController)
                 chatScreenNavigation(navController)
+                offlineModelNavigation(navController)
             composable(Route.VARIANTS) {
                 // Placeholder for Variants screen
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -265,7 +271,36 @@ fun NavGraphBuilder.homeScreenNavigation(navController: NavHostController, drawe
                 )
             },
             drawerState = drawerState,
-            scope = scope
+            scope = scope,
+            navController = navController
+        )
+    }
+}
+
+fun NavGraphBuilder.offlineModelNavigation(navController: NavHostController) {
+    composable(Route.OFFLINE_MODEL_BROWSER) {
+        ModelBrowserScreen(
+            onBackClick = { navController.navigateUp() },
+            onModelClick = { modelId ->
+                val encodedModelId = URLEncoder.encode(modelId, StandardCharsets.UTF_8.toString())
+                navController.navigate(
+                    Route.OFFLINE_MODEL_DETAIL.replace("{modelId}", encodedModelId)
+                )
+            }
+        )
+    }
+    
+    composable(
+        Route.OFFLINE_MODEL_DETAIL,
+        arguments = listOf(
+            navArgument("modelId") { type = NavType.StringType }
+        )
+    ) { backStackEntry ->
+        val encodedModelId = backStackEntry.arguments?.getString("modelId") ?: ""
+        val modelId = URLDecoder.decode(encodedModelId, StandardCharsets.UTF_8.toString())
+        ModelDetailScreen(
+            modelId = modelId,
+            onBackClick = { navController.navigateUp() }
         )
     }
 }
@@ -301,6 +336,7 @@ fun NavGraphBuilder.settingNavigation(navController: NavHostController) {
                         ApiType.GOOGLE -> navController.navigate(Route.GOOGLE_SETTINGS)
                         ApiType.GROQ -> navController.navigate(Route.GROQ_SETTINGS)
                         ApiType.OLLAMA -> navController.navigate(Route.OLLAMA_SETTINGS)
+                        ApiType.OFFLINE_AI -> navController.navigate(Route.OFFLINE_MODEL_BROWSER)
                     }
                 },
                 onNavigateToAboutPage = { navController.navigate(Route.ABOUT_PAGE) }

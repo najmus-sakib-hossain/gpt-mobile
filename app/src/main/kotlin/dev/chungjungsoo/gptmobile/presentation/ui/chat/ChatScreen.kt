@@ -297,6 +297,7 @@ fun ChatScreen(
                                 ApiType.GOOGLE -> googleMessage
                                 ApiType.GROQ -> groqMessage
                                 ApiType.OLLAMA -> ollamaMessage
+                                ApiType.OFFLINE_AI -> openAIMessage // TODO: Implement offline AI message
                             }
 
                             val loadingState = when (apiType) {
@@ -305,6 +306,7 @@ fun ChatScreen(
                                 ApiType.GOOGLE -> googleLoadingState
                                 ApiType.GROQ -> groqLoadingState
                                 ApiType.OLLAMA -> ollamaLoadingState
+                                ApiType.OFFLINE_AI -> openaiLoadingState // TODO: Implement offline AI loading state
                             }
 
                             OpponentChatBubble(

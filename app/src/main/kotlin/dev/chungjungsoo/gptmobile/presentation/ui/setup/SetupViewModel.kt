@@ -159,6 +159,7 @@ class SetupViewModel @Inject constructor(private val settingRepository: SettingR
             ApiType.GOOGLE -> googleModels
             ApiType.GROQ -> groqModels
             ApiType.OLLAMA -> ollamaModels
+            ApiType.OFFLINE_AI -> linkedSetOf()
         }.toList()
 
         if (modelList.size <= defaultModelIndex) {

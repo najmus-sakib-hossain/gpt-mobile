@@ -434,6 +434,7 @@ class ChatViewModel @Inject constructor(
             ApiType.GOOGLE -> _googleLoadingState
             ApiType.GROQ -> _groqLoadingState
             ApiType.OLLAMA -> _ollamaLoadingState
+            ApiType.OFFLINE_AI -> _openaiLoadingState // TODO: Implement offline AI loading state
         }
 
         if (retryingState == LoadingState.Loading) return
@@ -445,6 +446,7 @@ class ChatViewModel @Inject constructor(
             ApiType.GOOGLE -> _googleMessage.update { message }
             ApiType.GROQ -> _groqMessage.update { message }
             ApiType.OLLAMA -> _ollamaMessage.update { message }
+            ApiType.OFFLINE_AI -> {} // TODO: Implement offline AI message update
         }
     }
 
@@ -480,6 +482,7 @@ class ChatViewModel @Inject constructor(
             ApiType.GOOGLE -> _googleLoadingState.update { loadingState }
             ApiType.GROQ -> _groqLoadingState.update { loadingState }
             ApiType.OLLAMA -> _ollamaLoadingState.update { loadingState }
+            ApiType.OFFLINE_AI -> {} // TODO: Implement offline AI loading state update
         }
 
         var result = true
@@ -490,6 +493,7 @@ class ChatViewModel @Inject constructor(
                 ApiType.GOOGLE -> _googleLoadingState
                 ApiType.GROQ -> _groqLoadingState
                 ApiType.OLLAMA -> _ollamaLoadingState
+                ApiType.OFFLINE_AI -> _openaiLoadingState // TODO: Implement offline AI loading state
             }
 
             result = result && (state.value is LoadingState.Idle)

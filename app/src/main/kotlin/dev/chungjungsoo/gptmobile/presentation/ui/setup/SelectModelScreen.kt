@@ -63,6 +63,7 @@ fun SelectModelScreen(
         ApiType.GOOGLE -> generateGoogleModelList(models = googleModels)
         ApiType.GROQ -> generateGroqModelList(models = groqModels)
         ApiType.OLLAMA -> listOf()
+        ApiType.OFFLINE_AI -> listOf()
     }
     val defaultModel = remember {
         derivedStateOf {
@@ -74,6 +75,7 @@ fun SelectModelScreen(
                     ApiType.GOOGLE -> 0
                     ApiType.GROQ -> 0
                     ApiType.OLLAMA -> 0
+                    ApiType.OFFLINE_AI -> 0
                 }
             )
         }

@@ -44,6 +44,7 @@ object ModelConstants {
         ApiType.GOOGLE -> GOOGLE_API_URL
         ApiType.GROQ -> GROQ_API_URL
         ApiType.OLLAMA -> ""
+        ApiType.OFFLINE_AI -> ""
     }
 
     const val ANTHROPIC_MAXIMUM_TOKEN = 4096

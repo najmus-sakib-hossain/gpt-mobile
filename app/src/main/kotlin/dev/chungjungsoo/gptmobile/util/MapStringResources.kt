@@ -118,6 +118,7 @@ fun getAPIModelSelectTitle(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.select_google_model)
     ApiType.GROQ -> stringResource(R.string.select_groq_model)
     ApiType.OLLAMA -> stringResource(R.string.select_ollama_model)
+    ApiType.OFFLINE_AI -> stringResource(R.string.select_ollama_model) // TODO: Add string resource
 }
 
 @Composable
@@ -127,6 +128,7 @@ fun getAPIModelSelectDescription(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.select_google_model_description)
     ApiType.GROQ -> stringResource(R.string.select_groq_model_description)
     ApiType.OLLAMA -> stringResource(id = R.string.select_ollama_model_description)
+    ApiType.OFFLINE_AI -> stringResource(id = R.string.select_ollama_model_description) // TODO: Add string resource
 }
 
 @Composable
@@ -149,6 +151,7 @@ fun getPlatformSettingTitle(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.google_setting)
     ApiType.GROQ -> stringResource(R.string.groq_setting)
     ApiType.OLLAMA -> stringResource(R.string.ollama_setting)
+    ApiType.OFFLINE_AI -> stringResource(R.string.ollama_setting) // TODO: Add string resource
 }
 
 @Composable
@@ -158,6 +161,7 @@ fun getPlatformSettingDescription(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.platform_setting_description)
     ApiType.GROQ -> stringResource(R.string.platform_setting_description)
     ApiType.OLLAMA -> stringResource(R.string.platform_setting_description)
+    ApiType.OFFLINE_AI -> stringResource(R.string.platform_setting_description)
 }
 
 @Composable
@@ -167,4 +171,5 @@ fun getPlatformAPIBrandText(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.google_brand_text)
     ApiType.GROQ -> stringResource(R.string.groq_brand_text)
     ApiType.OLLAMA -> stringResource(R.string.ollama_brand_text)
+    ApiType.OFFLINE_AI -> stringResource(R.string.ollama_brand_text) // TODO: Add string resource
 }

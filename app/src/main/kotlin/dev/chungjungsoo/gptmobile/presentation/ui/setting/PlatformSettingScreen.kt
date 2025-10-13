@@ -92,6 +92,7 @@ fun PlatformSettingScreen(
                 ApiType.GOOGLE -> ModelConstants.DEFAULT_PROMPT
                 ApiType.GROQ -> ModelConstants.DEFAULT_PROMPT
                 ApiType.OLLAMA -> ModelConstants.DEFAULT_PROMPT
+                ApiType.OFFLINE_AI -> ModelConstants.DEFAULT_PROMPT
             }
 
             PreferenceSwitchWithContainer(

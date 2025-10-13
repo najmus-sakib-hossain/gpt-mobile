@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import dev.chungjungsoo.gptmobile.data.database.ChatDatabase
 import dev.chungjungsoo.gptmobile.data.database.dao.ChatRoomDao
 import dev.chungjungsoo.gptmobile.data.database.dao.MessageDao
+import dev.chungjungsoo.gptmobile.data.database.dao.OfflineModelDao
 import javax.inject.Singleton
 
 @Module
@@ -22,6 +23,9 @@ object DatabaseModule {
 
     @Provides
     fun provideMessageDao(chatDatabase: ChatDatabase): MessageDao = chatDatabase.messageDao()
+
+    @Provides
+    fun provideOfflineModelDao(chatDatabase: ChatDatabase): OfflineModelDao = chatDatabase.offlineModelDao()
 
     @Provides
     @Singleton
