@@ -162,7 +162,8 @@ fun ChatScreen(
         googleMessage.content,
         groqMessage.content,
         ollamaMessage.content,
-        geminiNano.content
+        geminiNano.content,
+        chatViewModel.offlineAIMessage.collectAsStateWithLifecycle().value.content
     ) {
         if (!isIdle) {
             listState.animateScrollToItem(groupedMessages.keys.size)
@@ -297,7 +298,7 @@ fun ChatScreen(
                                 ApiType.GOOGLE -> googleMessage
                                 ApiType.GROQ -> groqMessage
                                 ApiType.OLLAMA -> ollamaMessage
-                                ApiType.OFFLINE_AI -> openAIMessage // TODO: Implement offline AI message
+                                ApiType.OFFLINE_AI -> chatViewModel.offlineAIMessage.collectAsStateWithLifecycle().value
                             }
 
                             val loadingState = when (apiType) {
@@ -306,7 +307,7 @@ fun ChatScreen(
                                 ApiType.GOOGLE -> googleLoadingState
                                 ApiType.GROQ -> groqLoadingState
                                 ApiType.OLLAMA -> ollamaLoadingState
-                                ApiType.OFFLINE_AI -> openaiLoadingState // TODO: Implement offline AI loading state
+                                ApiType.OFFLINE_AI -> chatViewModel.offlineAILoadingState.collectAsStateWithLifecycle().value
                             }
 
                             OpponentChatBubble(

@@ -14,7 +14,8 @@ fun getPlatformTitleResources(): Map<ApiType, String> = mapOf(
     ApiType.ANTHROPIC to stringResource(R.string.anthropic),
     ApiType.GOOGLE to stringResource(R.string.google),
     ApiType.GROQ to stringResource(R.string.groq),
-    ApiType.OLLAMA to stringResource(R.string.ollama)
+    ApiType.OLLAMA to stringResource(R.string.ollama),
+    ApiType.OFFLINE_AI to stringResource(R.string.offline_ai)
 )
 
 @Composable
@@ -23,7 +24,8 @@ fun getPlatformDescriptionResources(): Map<ApiType, String> = mapOf(
     ApiType.ANTHROPIC to stringResource(R.string.anthropic_description),
     ApiType.GOOGLE to stringResource(R.string.google_description),
     ApiType.GROQ to stringResource(R.string.groq_description),
-    ApiType.OLLAMA to stringResource(R.string.ollama_description)
+    ApiType.OLLAMA to stringResource(R.string.ollama_description),
+    ApiType.OFFLINE_AI to stringResource(R.string.offline_ai_description)
 )
 
 @Composable
@@ -32,7 +34,8 @@ fun getPlatformAPILabelResources(): Map<ApiType, String> = mapOf(
     ApiType.ANTHROPIC to stringResource(R.string.anthropic_api_key),
     ApiType.GOOGLE to stringResource(R.string.google_api_key),
     ApiType.GROQ to stringResource(R.string.groq_api_key),
-    ApiType.OLLAMA to stringResource(R.string.ollama_api_key)
+    ApiType.OLLAMA to stringResource(R.string.ollama_api_key),
+    ApiType.OFFLINE_AI to stringResource(R.string.model_path)
 )
 
 @Composable
@@ -41,7 +44,8 @@ fun getPlatformHelpLinkResources(): Map<ApiType, String> = mapOf(
     ApiType.ANTHROPIC to stringResource(R.string.anthropic_api_help),
     ApiType.GOOGLE to stringResource(R.string.google_api_help),
     ApiType.GROQ to stringResource(R.string.groq_api_help),
-    ApiType.OLLAMA to stringResource(R.string.ollama_api_help)
+    ApiType.OLLAMA to stringResource(R.string.ollama_api_help),
+    ApiType.OFFLINE_AI to stringResource(R.string.offline_ai_help)
 )
 
 @Composable
@@ -118,7 +122,7 @@ fun getAPIModelSelectTitle(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.select_google_model)
     ApiType.GROQ -> stringResource(R.string.select_groq_model)
     ApiType.OLLAMA -> stringResource(R.string.select_ollama_model)
-    ApiType.OFFLINE_AI -> stringResource(R.string.select_ollama_model) // TODO: Add string resource
+    ApiType.OFFLINE_AI -> stringResource(R.string.select_offline_ai_model)
 }
 
 @Composable
@@ -128,7 +132,7 @@ fun getAPIModelSelectDescription(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.select_google_model_description)
     ApiType.GROQ -> stringResource(R.string.select_groq_model_description)
     ApiType.OLLAMA -> stringResource(id = R.string.select_ollama_model_description)
-    ApiType.OFFLINE_AI -> stringResource(id = R.string.select_ollama_model_description) // TODO: Add string resource
+    ApiType.OFFLINE_AI -> stringResource(id = R.string.select_offline_ai_model_description)
 }
 
 @Composable
@@ -151,7 +155,7 @@ fun getPlatformSettingTitle(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.google_setting)
     ApiType.GROQ -> stringResource(R.string.groq_setting)
     ApiType.OLLAMA -> stringResource(R.string.ollama_setting)
-    ApiType.OFFLINE_AI -> stringResource(R.string.ollama_setting) // TODO: Add string resource
+    ApiType.OFFLINE_AI -> stringResource(R.string.offline_ai_setting)
 }
 
 @Composable
@@ -171,5 +175,5 @@ fun getPlatformAPIBrandText(apiType: ApiType) = when (apiType) {
     ApiType.GOOGLE -> stringResource(R.string.google_brand_text)
     ApiType.GROQ -> stringResource(R.string.groq_brand_text)
     ApiType.OLLAMA -> stringResource(R.string.ollama_brand_text)
-    ApiType.OFFLINE_AI -> stringResource(R.string.ollama_brand_text) // TODO: Add string resource
+    ApiType.OFFLINE_AI -> stringResource(R.string.offline_ai_brand_text)
 }

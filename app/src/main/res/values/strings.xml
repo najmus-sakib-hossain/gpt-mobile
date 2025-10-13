@@ -185,6 +185,14 @@
     <string name="ollama_setting">Ollama Settings</string>
     <string name="ollama_brand_text" translatable="false">Powered by Ollama</string>
     <string name="select_ollama_model_description">Please select the Ollama model. Since there is so many models and tags that are supported, you can customize the model value. Make sure that the endpoint actually supports the model and get it running. Otherwise, it will not generate a response.</string>
+    <string name="offline_ai" translatable="false">Offline AI</string>
+    <string name="offline_ai_description">Run AI models locally on your device.</string>
+    <string name="offline_ai_setting">Offline AI Settings</string>
+    <string name="offline_ai_brand_text" translatable="false">Powered by SmolLM</string>
+    <string name="select_offline_ai_model">Select Offline AI Model</string>
+    <string name="select_offline_ai_model_description">Please select a downloaded GGUF model file from your device storage.</string>
+    <string name="offline_ai_help" translatable="false">https://huggingface.co/models?library=gguf&amp;sort=trending</string>
+    <string name="model_path">Model Path</string>
     <string name="custom">Custom</string>
     <string name="custom_description">Use model that is not on the list.</string>
     <string name="model_name">Model Name</string>

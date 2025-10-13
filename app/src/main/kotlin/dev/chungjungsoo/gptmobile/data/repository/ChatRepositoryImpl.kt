@@ -32,6 +32,7 @@ import dev.chungjungsoo.gptmobile.data.dto.anthropic.response.ErrorResponseChunk
 import dev.chungjungsoo.gptmobile.data.dto.anthropic.response.MessageResponseChunk
 import dev.chungjungsoo.gptmobile.data.model.ApiType
 import dev.chungjungsoo.gptmobile.data.network.AnthropicAPI
+import dev.chungjungsoo.gptmobile.data.service.LLMService
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -46,7 +47,8 @@ constructor(
         private val chatRoomDao: ChatRoomDao,
         private val messageDao: MessageDao,
         private val settingRepository: SettingRepository,
-        private val anthropic: AnthropicAPI
+        private val anthropic: AnthropicAPI,
+        private val llmService: LLMService
 ) : ChatRepository {
 
     private lateinit var openAI: OpenAI
@@ -258,6 +260,62 @@ constructor(
                 .map<ChatCompletionChunk, ApiState> { chunk ->
                     ApiState.Success(chunk.choices.getOrNull(0)?.delta?.content ?: "")
                 }
+                .catch { throwable -> emit(ApiState.Error(throwable.message ?: "Unknown error")) }
+                .onStart { emit(ApiState.Loading) }
+                .onCompletion { emit(ApiState.Done) }
+    }
+
+    override suspend fun completeOfflineAIChat(
+            question: Message,
+            history: List<Message>
+    ): Flow<ApiState> {
+        val platform =
+                checkNotNull(
+                        settingRepository.fetchPlatforms().firstOrNull { it.name == ApiType.OFFLINE_AI }
+                )
+        
+        // Build ChatML format prompt
+        val prompt = buildString {
+            append("<|system|>\n")
+            append(platform.systemPrompt ?: ModelConstants.DEFAULT_PROMPT)
+            append("\n")
+            
+            // Add history
+            (history + listOf(question)).forEach { message ->
+                when (message.platformType) {
+                    null -> {
+                        append("<|user|>\n")
+                        append(message.content)
+                        append("\n")
+                    }
+                    ApiType.OFFLINE_AI -> {
+                        append("<|assistant|>\n")
+                        append(message.content)
+                        append("\n")
+                    }
+                    else -> {}
+                }
+            }
+            
+            append("<|assistant|>\n")
+        }
+        
+        // Get model path from platform.model (should be the downloaded file path)
+        val modelPath = platform.model ?: throw IllegalStateException("No offline model selected")
+        
+        // Load model if not already loaded
+        if (!llmService.isModelLoaded() || llmService.getLoadedModelPath() != modelPath) {
+            llmService.loadModel(modelPath, contextSize = 4096)
+        }
+        
+        // Generate text with streaming
+        return llmService.generateText(
+                prompt = prompt,
+                maxTokens = ModelConstants.ANTHROPIC_MAXIMUM_TOKEN,
+                temperature = platform.temperature ?: 0.7f,
+                topP = platform.topP ?: 0.9f
+        )
+                .map<String, ApiState> { token -> ApiState.Success(token) }
                 .catch { throwable -> emit(ApiState.Error(throwable.message ?: "Unknown error")) }
                 .onStart { emit(ApiState.Loading) }
                 .onCompletion { emit(ApiState.Done) }

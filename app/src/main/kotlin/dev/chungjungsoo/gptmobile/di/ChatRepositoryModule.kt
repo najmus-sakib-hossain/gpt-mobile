@@ -12,6 +12,7 @@ import dev.chungjungsoo.gptmobile.data.network.AnthropicAPI
 import dev.chungjungsoo.gptmobile.data.repository.ChatRepository
 import dev.chungjungsoo.gptmobile.data.repository.ChatRepositoryImpl
 import dev.chungjungsoo.gptmobile.data.repository.SettingRepository
+import dev.chungjungsoo.gptmobile.data.service.LLMService
 import javax.inject.Singleton
 
 @Module
@@ -25,6 +26,7 @@ object ChatRepositoryModule {
         chatRoomDao: ChatRoomDao,
         messageDao: MessageDao,
         settingRepository: SettingRepository,
-        anthropicAPI: AnthropicAPI
-    ): ChatRepository = ChatRepositoryImpl(appContext, chatRoomDao, messageDao, settingRepository, anthropicAPI)
+        anthropicAPI: AnthropicAPI,
+        llmService: LLMService
+    ): ChatRepository = ChatRepositoryImpl(appContext, chatRoomDao, messageDao, settingRepository, anthropicAPI, llmService)
 }

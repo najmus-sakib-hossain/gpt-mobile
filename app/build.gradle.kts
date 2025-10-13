@@ -60,6 +60,9 @@ android {
 }
 
 dependencies {
+    // Offline AI - llama.cpp integration
+    implementation(project(":app:smollm"))
+    
     // Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

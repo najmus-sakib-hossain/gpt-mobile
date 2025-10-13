@@ -78,6 +78,9 @@ class ChatViewModel @Inject constructor(
     private val _ollamaLoadingState = MutableStateFlow<LoadingState>(LoadingState.Idle)
     val ollamaLoadingState = _ollamaLoadingState.asStateFlow()
 
+    private val _offlineAILoadingState = MutableStateFlow<LoadingState>(LoadingState.Idle)
+    val offlineAILoadingState = _offlineAILoadingState.asStateFlow()
+
     private val _geminiNanoLoadingState = MutableStateFlow<LoadingState>(LoadingState.Idle)
     val geminiNanoLoadingState = _geminiNanoLoadingState.asStateFlow()
 
@@ -110,6 +113,9 @@ class ChatViewModel @Inject constructor(
     private val _ollamaMessage = MutableStateFlow(Message(chatId = chatRoomId, content = "", platformType = ApiType.OLLAMA))
     val ollamaMessage = _ollamaMessage.asStateFlow()
 
+    private val _offlineAIMessage = MutableStateFlow(Message(chatId = chatRoomId, content = "", platformType = ApiType.OFFLINE_AI))
+    val offlineAIMessage = _offlineAIMessage.asStateFlow()
+
     private val _geminiNanoMessage = MutableStateFlow(Message(chatId = chatRoomId, content = "", platformType = null))
     val geminiNanoMessage = _geminiNanoMessage.asStateFlow()
 
@@ -120,6 +126,7 @@ class ChatViewModel @Inject constructor(
     private val groqFlow = MutableSharedFlow<ApiState>()
     private val ollamaFlow = MutableSharedFlow<ApiState>()
     private val geminiNanoFlow = MutableSharedFlow<ApiState>()
+    private val offlineAIFlow = MutableSharedFlow<ApiState>()
 
     init {
         Log.d("ViewModel", "$chatRoomId")
@@ -215,6 +222,11 @@ class ChatViewModel @Inject constructor(
                 completeOllamaChat()
             }
 
+            ApiType.OFFLINE_AI -> {
+                _offlineAIMessage.update { it.copy(id = message.id, content = "", createdAt = currentTimeStamp) }
+                completeOfflineAIChat()
+            }
+
             else -> {}
         }
     }
@@ -270,6 +282,7 @@ class ChatViewModel @Inject constructor(
         _googleMessage.update { it.copy(id = 0, content = "") }
         _groqMessage.update { it.copy(id = 0, content = "") }
         _ollamaMessage.update { it.copy(id = 0, content = "") }
+        _offlineAIMessage.update { it.copy(id = 0, content = "") }
     }
 
     private fun completeChat() {
@@ -294,6 +307,18 @@ class ChatViewModel @Inject constructor(
 
         if (ApiType.OLLAMA in enabledPlatforms) {
             completeOllamaChat()
+        }
+
+        if (ApiType.OFFLINE_AI in enabledPlatforms) {
+            completeOfflineAIChat()
+        }
+    }
+
+    private fun completeOfflineAIChat() {
+        viewModelScope.launch {
+            _offlineAILoadingState.update { LoadingState.Loading }
+            val chatFlow = chatRepository.completeOfflineAIChat(question = _userMessage.value, history = _messages.value)
+            chatFlow.collect { chunk -> offlineAIFlow.emit(chunk) }
         }
     }
 
@@ -376,6 +401,13 @@ class ChatViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            offlineAIFlow.handleStates(
+                messageFlow = _offlineAIMessage,
+                onLoadingComplete = { updateLoadingState(ApiType.OFFLINE_AI, LoadingState.Idle) }
+            )
+        }
+
+        viewModelScope.launch {
             anthropicFlow.handleStates(
                 messageFlow = _anthropicMessage,
                 onLoadingComplete = { updateLoadingState(ApiType.ANTHROPIC, LoadingState.Idle) }
@@ -434,7 +466,7 @@ class ChatViewModel @Inject constructor(
             ApiType.GOOGLE -> _googleLoadingState
             ApiType.GROQ -> _groqLoadingState
             ApiType.OLLAMA -> _ollamaLoadingState
-            ApiType.OFFLINE_AI -> _openaiLoadingState // TODO: Implement offline AI loading state
+            ApiType.OFFLINE_AI -> _offlineAILoadingState
         }
 
         if (retryingState == LoadingState.Loading) return
@@ -446,7 +478,7 @@ class ChatViewModel @Inject constructor(
             ApiType.GOOGLE -> _googleMessage.update { message }
             ApiType.GROQ -> _groqMessage.update { message }
             ApiType.OLLAMA -> _ollamaMessage.update { message }
-            ApiType.OFFLINE_AI -> {} // TODO: Implement offline AI message update
+            ApiType.OFFLINE_AI -> _offlineAIMessage.update { message }
         }
     }
 
@@ -473,6 +505,10 @@ class ChatViewModel @Inject constructor(
         if (ApiType.OLLAMA in enabledPlatforms) {
             addMessage(_ollamaMessage.value)
         }
+
+        if (ApiType.OFFLINE_AI in enabledPlatforms) {
+            addMessage(_offlineAIMessage.value)
+        }
     }
 
     private fun updateLoadingState(apiType: ApiType, loadingState: LoadingState) {
@@ -482,7 +518,7 @@ class ChatViewModel @Inject constructor(
             ApiType.GOOGLE -> _googleLoadingState.update { loadingState }
             ApiType.GROQ -> _groqLoadingState.update { loadingState }
             ApiType.OLLAMA -> _ollamaLoadingState.update { loadingState }
-            ApiType.OFFLINE_AI -> {} // TODO: Implement offline AI loading state update
+            ApiType.OFFLINE_AI -> _offlineAILoadingState.update { loadingState }
         }
 
         var result = true
@@ -493,7 +529,7 @@ class ChatViewModel @Inject constructor(
                 ApiType.GOOGLE -> _googleLoadingState
                 ApiType.GROQ -> _groqLoadingState
                 ApiType.OLLAMA -> _ollamaLoadingState
-                ApiType.OFFLINE_AI -> _openaiLoadingState // TODO: Implement offline AI loading state
+                ApiType.OFFLINE_AI -> _offlineAILoadingState
             }
 
             result = result && (state.value is LoadingState.Idle)
