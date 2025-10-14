@@ -7,6 +7,9 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 object FileUtil {
+    // Cache for URI -> file path conversions to avoid re-copying
+    private val uriToFilePathCache = mutableMapOf<String, String>()
+    
     /**
      * Copy a file from a content URI to app's internal storage
      * Returns the absolute file path of the copied file
@@ -15,6 +18,7 @@ object FileUtil {
         return try {
             android.util.Log.d("FileUtil", "Starting copy from URI: $uri")
             android.util.Log.d("FileUtil", "Target file name: $fileName")
+            android.util.Log.d("Nothing", "Just logging something to see if logs appear")
             
             val inputStream = context.contentResolver.openInputStream(uri)
             if (inputStream == null) {
@@ -82,17 +86,33 @@ object FileUtil {
      * Ensure the model path is a valid file path, not a content URI.
      * If the path is a content URI, copy it to internal storage and return the file path.
      * If it's already a file path, return it as-is.
+     * Uses caching to avoid re-copying the same file.
      */
     suspend fun ensureModelFileExists(context: Context, modelPath: String): String? {
         return try {
             // Check if it's a content URI
             if (modelPath.startsWith("content://")) {
+                // Check cache first
+                uriToFilePathCache[modelPath]?.let { cachedPath ->
+                    val cachedFile = File(cachedPath)
+                    if (cachedFile.exists()) {
+                        android.util.Log.d("FileUtil", "Using cached file path: $cachedPath")
+                        return cachedPath
+                    } else {
+                        // File was deleted, remove from cache
+                        android.util.Log.d("FileUtil", "Cached file no longer exists, re-copying")
+                        uriToFilePathCache.remove(modelPath)
+                    }
+                }
+                
                 android.util.Log.d("FileUtil", "Model path is a content URI, converting: $modelPath")
                 val uri = Uri.parse(modelPath)
                 val fileName = getFileNameFromUri(context, uri)
                 val filePath = copyUriToInternalStorage(context, uri, fileName)
                 
                 if (filePath != null) {
+                    // Cache the conversion
+                    uriToFilePathCache[modelPath] = filePath
                     android.util.Log.d("FileUtil", "Converted content URI to file path: $filePath")
                 } else {
                     android.util.Log.e("FileUtil", "Failed to convert content URI to file path")
@@ -113,6 +133,15 @@ object FileUtil {
             android.util.Log.e("FileUtil", "Error ensuring model file exists", e)
             null
         }
+    }
+    
+    /**
+     * Clear the URI to file path cache.
+     * Useful when the user changes the model selection.
+     */
+    fun clearCache() {
+        uriToFilePathCache.clear()
+        android.util.Log.d("FileUtil", "Cache cleared")
     }
 }
 

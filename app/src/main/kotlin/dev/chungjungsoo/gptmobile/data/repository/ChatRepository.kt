@@ -13,6 +13,7 @@ interface ChatRepository {
     suspend fun completeGroqChat(question: Message, history: List<Message>): Flow<ApiState>
     suspend fun completeOllamaChat(question: Message, history: List<Message>): Flow<ApiState>
     suspend fun completeOfflineAIChat(question: Message, history: List<Message>): Flow<ApiState>
+    suspend fun preloadOfflineAIModel()
     suspend fun fetchChatList(): List<ChatRoom>
     suspend fun fetchMessages(chatId: Int): List<Message>
     fun generateDefaultChatTitle(messages: List<Message>): String?

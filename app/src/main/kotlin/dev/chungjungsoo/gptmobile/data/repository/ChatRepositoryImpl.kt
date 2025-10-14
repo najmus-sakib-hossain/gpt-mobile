@@ -279,7 +279,7 @@ constructor(
         
         Log.d("ChatRepositoryImpl", "Attempting to use offline model at: $modelPath")
         
-        // Convert content URI to file path if needed
+        // Convert content URI to file path if needed (cached, only copies once)
         val actualFilePath = dev.chungjungsoo.gptmobile.util.FileUtil.ensureModelFileExists(appContext, modelPath)
         if (actualFilePath == null) {
             throw IllegalStateException("Failed to access offline model from: $modelPath. The file may not exist or cannot be read.")
@@ -290,6 +290,7 @@ constructor(
         // Load model if not already loaded - includes system prompt
         if (!llmService.isModelLoaded() || llmService.getLoadedModelPath() != actualFilePath) {
             val systemPrompt = platform.systemPrompt ?: ModelConstants.DEFAULT_PROMPT
+            Log.d("ChatRepositoryImpl", "Loading model from: $actualFilePath")
             val loadSuccess = llmService.loadModel(
                 modelPath = actualFilePath, 
                 contextSize = 4096,
@@ -298,33 +299,82 @@ constructor(
             if (!loadSuccess) {
                 throw IllegalStateException("Failed to load offline model from: $actualFilePath. Please verify the file is a valid GGUF model.")
             }
-            Log.d("ChatRepositoryImpl", "Model loaded successfully from: $actualFilePath")
-            
-            // Add chat history to the model
-            history.forEach { message ->
-                when (message.platformType) {
-                    null -> {
-                        // User message
-                        llmService.addUserMessage(message.content)
-                    }
-                    ApiType.OFFLINE_AI -> {
-                        // Assistant message (previous responses)
-                        llmService.addAssistantMessage(message.content)
-                    }
-                    else -> {
-                        // Ignore messages from other platforms
-                    }
+            Log.d("ChatRepositoryImpl", "Model loaded successfully")
+        } else {
+            Log.d("ChatRepositoryImpl", "Model already loaded, reusing")
+        }
+        
+        // Add chat history before generating (SmolLM maintains context)
+        // Only add the NEW history that hasn't been added yet
+        Log.d("ChatRepositoryImpl", "Adding chat history (${history.size} messages)")
+        history.forEach { message ->
+            when (message.platformType) {
+                null -> {
+                    // User message
+                    llmService.addUserMessage(message.content)
+                }
+                ApiType.OFFLINE_AI -> {
+                    // Assistant message (previous responses)
+                    llmService.addAssistantMessage(message.content)
+                }
+                else -> {
+                    // Ignore messages from other platforms
                 }
             }
-            Log.d("ChatRepositoryImpl", "Chat history added (${history.size} messages)")
         }
         
         // Generate response using SmolLM's chat API
+        Log.d("ChatRepositoryImpl", "Generating response for new question")
         return llmService.getResponse(question.content)
                 .map<String, ApiState> { token -> ApiState.Success(token) }
                 .catch { throwable -> emit(ApiState.Error(throwable.message ?: "Unknown error")) }
                 .onStart { emit(ApiState.Loading) }
                 .onCompletion { emit(ApiState.Done) }
+    }
+    
+    override suspend fun preloadOfflineAIModel() {
+        try {
+            val platform = settingRepository.fetchPlatforms().firstOrNull { it.name == ApiType.OFFLINE_AI }
+            if (platform == null) {
+                Log.d("ChatRepositoryImpl", "Offline AI platform not configured")
+                return
+            }
+            
+            val modelPath = platform.model
+            if (modelPath.isNullOrBlank()) {
+                Log.d("ChatRepositoryImpl", "No offline model selected")
+                return
+            }
+            
+            Log.d("ChatRepositoryImpl", "Pre-loading offline model from: $modelPath")
+            
+            // Convert content URI to file path if needed (this will be cached)
+            val actualFilePath = dev.chungjungsoo.gptmobile.util.FileUtil.ensureModelFileExists(appContext, modelPath)
+            if (actualFilePath == null) {
+                Log.e("ChatRepositoryImpl", "Failed to access offline model for preloading")
+                return
+            }
+            
+            // Load model if not already loaded
+            if (!llmService.isModelLoaded() || llmService.getLoadedModelPath() != actualFilePath) {
+                val systemPrompt = platform.systemPrompt ?: ModelConstants.DEFAULT_PROMPT
+                Log.d("ChatRepositoryImpl", "Pre-loading model...")
+                val loadSuccess = llmService.loadModel(
+                    modelPath = actualFilePath,
+                    contextSize = 4096,
+                    systemPrompt = systemPrompt
+                )
+                if (loadSuccess) {
+                    Log.d("ChatRepositoryImpl", "Model pre-loaded successfully! Ready for instant inference.")
+                } else {
+                    Log.e("ChatRepositoryImpl", "Failed to pre-load model")
+                }
+            } else {
+                Log.d("ChatRepositoryImpl", "Model already loaded")
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepositoryImpl", "Error pre-loading model", e)
+        }
     }
 
     override suspend fun fetchChatList(): List<ChatRoom> = chatRoomDao.getChatRooms()

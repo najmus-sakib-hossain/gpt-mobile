@@ -135,6 +135,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch { fetchMessages() }
         fetchEnabledPlatformsInApp()
         observeFlow()
+        preloadOfflineAIModel()
     }
 
     fun askQuestion() {
@@ -536,5 +537,15 @@ class ChatViewModel @Inject constructor(
         }
 
         _isIdle.update { result }
+    }
+    
+    private fun preloadOfflineAIModel() {
+        // If Offline AI is enabled in this chat, pre-load the model
+        if (ApiType.OFFLINE_AI in enabledPlatformsInChat) {
+            viewModelScope.launch {
+                Log.d("ChatViewModel", "Pre-loading offline AI model for instant responses...")
+                chatRepository.preloadOfflineAIModel()
+            }
+        }
     }
 }
