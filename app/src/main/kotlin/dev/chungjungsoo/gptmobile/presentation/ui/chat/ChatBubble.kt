@@ -105,9 +105,6 @@ fun OpponentChatBubble(
                     isTextSelectable = true,
                     linkifyMask = Linkify.WEB_URLS
                 )
-                if (!isLoading) {
-                    BrandText(apiType)
-                }
             }
 
             if (!isLoading) {
