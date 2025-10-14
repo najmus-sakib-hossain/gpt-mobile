@@ -2,8 +2,11 @@ package dev.chungjungsoo.gptmobile.presentation.ui.home
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +39,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -92,7 +96,9 @@ import dev.chungjungsoo.gptmobile.presentation.common.PlatformCheckBoxItem
 import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.OfflineModelViewModel
 import dev.chungjungsoo.gptmobile.util.getPlatformTitleResources
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -114,6 +120,64 @@ fun HomeScreen(
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    
+    // File picker for Offline AI model selection
+    val offlineModelPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                // Get persistent permission for the file
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                
+                // Show loading toast
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.copying_model_file),
+                    Toast.LENGTH_SHORT
+                ).show()
+                
+                // Copy file to internal storage in background
+                CoroutineScope(Dispatchers.IO).launch {
+                    android.util.Log.d("HomeScreen", "Starting to copy model file from URI: $it")
+                    val fileName = dev.chungjungsoo.gptmobile.util.FileUtil.getFileNameFromUri(context, it)
+                    android.util.Log.d("HomeScreen", "Extracted file name: $fileName")
+                    val filePath = dev.chungjungsoo.gptmobile.util.FileUtil.copyUriToInternalStorage(context, it, fileName)
+                    
+                    withContext(Dispatchers.Main) {
+                        if (filePath != null) {
+                            android.util.Log.d("HomeScreen", "File copied successfully to: $filePath")
+                            // Update the model path with the actual file path
+                            homeViewModel.updateOfflineModelPath(filePath)
+                            
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.model_file_selected),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            android.util.Log.e("HomeScreen", "Failed to copy file from URI: $it")
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.error_copying_model_file),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("HomeScreen", "Exception in file picker callback", e)
+                Toast.makeText(
+                    context,
+                    "Error: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
 
     LaunchedEffect(lifecycleState) {
         if (lifecycleState == Lifecycle.State.RESUMED && !chatListState.isSelectionMode) {
@@ -178,11 +242,28 @@ fun HomeScreen(
         SelectPlatformDialog(
             platformState,
             onDismissRequest = { homeViewModel.closeSelectModelDialog() },
-            onConfirmation = {
-                homeViewModel.closeSelectModelDialog()
-                navigateToNewChat(it)
+            onConfirmation = { selectedPlatforms ->
+                // Validate Offline AI has model selected
+                val offlineAISelected = selectedPlatforms.contains(ApiType.OFFLINE_AI)
+                val offlineAIPlatform = platformState.find { it.name == ApiType.OFFLINE_AI }
+                
+                if (offlineAISelected && offlineAIPlatform?.model.isNullOrBlank()) {
+                    // Show error toast - need to select model first
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.please_select_offline_model),
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    homeViewModel.closeSelectModelDialog()
+                    navigateToNewChat(selectedPlatforms)
+                }
             },
-            onPlatformSelect = { homeViewModel.updateCheckedState(it) }
+            onPlatformSelect = { homeViewModel.updateCheckedState(it) },
+            onOfflineModelPick = {
+                // Launch file picker for GGUF files
+                offlineModelPicker.launch(arrayOf("*/*"))
+            }
         )
     }
 
@@ -737,7 +818,8 @@ fun SelectPlatformDialog(
     platforms: List<Platform>,
     onDismissRequest: () -> Unit,
     onConfirmation: (enabledPlatforms: List<ApiType>) -> Unit,
-    onPlatformSelect: (Platform) -> Unit
+    onPlatformSelect: (Platform) -> Unit,
+    onOfflineModelPick: () -> Unit = {}
 ) {
     val titles = getPlatformTitleResources()
     val configuration = LocalConfiguration.current
@@ -767,13 +849,48 @@ fun SelectPlatformDialog(
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 if (platforms.any { it.enabled }) {
                     platforms.forEach { platform ->
-                        PlatformCheckBoxItem(
-                            platform = platform,
-                            title = titles[platform.name]!!,
-                            enabled = platform.enabled,
-                            description = null,
-                            onClickEvent = { onPlatformSelect(platform) }
-                        )
+                        Column {
+                            val needsModelSelection = platform.name == ApiType.OFFLINE_AI && platform.model.isNullOrBlank()
+                            val description = if (needsModelSelection) {
+                                stringResource(R.string.model_not_selected_warning)
+                            } else if (platform.name == ApiType.OFFLINE_AI && !platform.model.isNullOrBlank()) {
+                                "Model: ${platform.model?.substringAfterLast("/") ?: ""}"
+                            } else {
+                                null
+                            }
+                            
+                            PlatformCheckBoxItem(
+                                platform = platform,
+                                title = titles[platform.name]!!,
+                                enabled = platform.enabled,
+                                description = description,
+                                onClickEvent = { onPlatformSelect(platform) }
+                            )
+                            
+                            // Show model picker button for Offline AI
+                            if (platform.name == ApiType.OFFLINE_AI && platform.enabled) {
+                                androidx.compose.material3.OutlinedButton(
+                                    onClick = onOfflineModelPick,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Share,
+                                        contentDescription = "Select Model",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(8.dp))
+                                    Text(
+                                        text = if (platform.model.isNullOrBlank()) {
+                                            stringResource(R.string.select_model_file)
+                                        } else {
+                                            stringResource(R.string.change_model_file)
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 } else {
                     EnablePlatformWarningText()
@@ -827,7 +944,8 @@ private fun SelectPlatformDialogPreview() {
         platforms = platforms,
         onDismissRequest = {},
         onConfirmation = {},
-        onPlatformSelect = {}
+        onPlatformSelect = {},
+        onOfflineModelPick = {}
     )
 }
 

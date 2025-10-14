@@ -1,13 +1,16 @@
 package dev.chungjungsoo.gptmobile.presentation.ui.home
 
+import android.app.Application
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.chungjungsoo.gptmobile.data.database.entity.ChatRoom
 import dev.chungjungsoo.gptmobile.data.dto.Platform
+import dev.chungjungsoo.gptmobile.data.model.ApiType
 import dev.chungjungsoo.gptmobile.data.repository.ChatRepository
 import dev.chungjungsoo.gptmobile.data.repository.SettingRepository
+import dev.chungjungsoo.gptmobile.util.ConnectivityUtil
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +20,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    private val application: Application,
     private val chatRepository: ChatRepository,
     private val settingRepository: SettingRepository
 ) : ViewModel() {
@@ -117,7 +121,41 @@ class HomeViewModel @Inject constructor(
     fun fetchPlatformStatus() {
         viewModelScope.launch {
             val platforms = settingRepository.fetchPlatforms()
-            _platformState.update { platforms }
+            
+            // Auto-select Offline AI if no internet connection
+            val hasInternet = ConnectivityUtil.isNetworkAvailable(application)
+            val updatedPlatforms = if (!hasInternet) {
+                platforms.map { platform ->
+                    if (platform.name == ApiType.OFFLINE_AI && platform.enabled) {
+                        platform.copy(selected = true)
+                    } else {
+                        platform.copy(selected = false)
+                    }
+                }
+            } else {
+                platforms
+            }
+            
+            _platformState.update { updatedPlatforms }
+        }
+    }
+    
+    fun updateOfflineModelPath(modelPath: String) {
+        android.util.Log.d("HomeViewModel", "Updating offline model path to: $modelPath")
+        viewModelScope.launch {
+            // Update the model path for Offline AI
+            val updatedPlatforms = _platformState.value.map { platform ->
+                if (platform.name == ApiType.OFFLINE_AI) {
+                    platform.copy(model = modelPath)
+                } else {
+                    platform
+                }
+            }
+            _platformState.update { updatedPlatforms }
+            
+            // Save to repository
+            settingRepository.updatePlatforms(updatedPlatforms)
+            android.util.Log.d("HomeViewModel", "Platform settings saved with model path: $modelPath")
         }
     }
 

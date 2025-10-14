@@ -1,5 +1,8 @@
 package dev.chungjungsoo.gptmobile.presentation.ui.setting
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -34,12 +37,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import dev.chungjungsoo.gptmobile.R
 import dev.chungjungsoo.gptmobile.data.ModelConstants
 import dev.chungjungsoo.gptmobile.data.model.ApiType
@@ -55,6 +63,7 @@ fun PlatformSettingScreen(
     settingViewModel: SettingViewModel = hiltViewModel(),
     onNavigationClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     val scrollBehavior = pinnedExitUntilCollapsedScrollBehavior(
         canScroll = { scrollState.canScrollForward || scrollState.canScrollBackward }
@@ -62,6 +71,65 @@ fun PlatformSettingScreen(
     val title = getPlatformSettingTitle(apiType)
     val platformState by settingViewModel.platformState.collectAsStateWithLifecycle()
     val dialogState by settingViewModel.dialogState.collectAsStateWithLifecycle()
+    
+    // File picker launcher for Offline AI model selection
+    val modelFilePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                // Get persistent permission for the file
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                
+                // Show loading toast
+                android.widget.Toast.makeText(
+                    context,
+                    context.getString(R.string.copying_model_file),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                
+                // Copy file to internal storage in background
+                CoroutineScope(Dispatchers.IO).launch {
+                    android.util.Log.d("PlatformSettingScreen", "Starting to copy model file from URI: $it")
+                    val fileName = dev.chungjungsoo.gptmobile.util.FileUtil.getFileNameFromUri(context, it)
+                    android.util.Log.d("PlatformSettingScreen", "Extracted file name: $fileName")
+                    val filePath = dev.chungjungsoo.gptmobile.util.FileUtil.copyUriToInternalStorage(context, it, fileName)
+                    
+                    withContext(Dispatchers.Main) {
+                        if (filePath != null) {
+                            android.util.Log.d("PlatformSettingScreen", "File copied successfully to: $filePath")
+                            // Update the model path with the actual file path
+                            settingViewModel.updateModel(apiType, filePath)
+                            settingViewModel.savePlatformSettings()
+                            
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.model_file_selected),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            android.util.Log.e("PlatformSettingScreen", "Failed to copy file from URI: $it")
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.error_copying_model_file),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlatformSettingScreen", "Exception in file picker callback", e)
+                android.widget.Toast.makeText(
+                    context,
+                    "Error: ${e.message}",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
 
     Scaffold(
         modifier = modifier
@@ -99,42 +167,57 @@ fun PlatformSettingScreen(
                 title = stringResource(R.string.enable_api),
                 isChecked = enabled
             ) { settingViewModel.toggleAPI(apiType) }
-            SettingItem(
-                modifier = Modifier.height(64.dp),
-                title = stringResource(R.string.api_url),
-                description = url,
-                enabled = enabled && platform.name != ApiType.GOOGLE,
-                onItemClick = settingViewModel::openApiUrlDialog,
-                showTrailingIcon = false,
-                showLeadingIcon = true,
-                leadingIcon = {
-                    Icon(
-                        ImageVector.vectorResource(id = R.drawable.ic_link),
-                        contentDescription = stringResource(R.string.url_icon)
-                    )
-                }
-            )
-            SettingItem(
-                modifier = Modifier.height(64.dp),
-                title = stringResource(R.string.api_key),
-                description = token?.let { stringResource(R.string.token_set, it[0]) } ?: stringResource(R.string.token_not_set),
-                enabled = enabled,
-                onItemClick = settingViewModel::openApiTokenDialog,
-                showTrailingIcon = false,
-                showLeadingIcon = true,
-                leadingIcon = {
-                    Icon(
-                        ImageVector.vectorResource(id = R.drawable.ic_key),
-                        contentDescription = stringResource(R.string.key_icon)
-                    )
-                }
-            )
+            
+            // Hide API URL for Offline AI (not needed)
+            if (apiType != ApiType.OFFLINE_AI) {
+                SettingItem(
+                    modifier = Modifier.height(64.dp),
+                    title = stringResource(R.string.api_url),
+                    description = url,
+                    enabled = enabled && platform.name != ApiType.GOOGLE,
+                    onItemClick = settingViewModel::openApiUrlDialog,
+                    showTrailingIcon = false,
+                    showLeadingIcon = true,
+                    leadingIcon = {
+                        Icon(
+                            ImageVector.vectorResource(id = R.drawable.ic_link),
+                            contentDescription = stringResource(R.string.url_icon)
+                        )
+                    }
+                )
+            }
+            
+            // Hide API Key for Offline AI (not needed)
+            if (apiType != ApiType.OFFLINE_AI) {
+                SettingItem(
+                    modifier = Modifier.height(64.dp),
+                    title = stringResource(R.string.api_key),
+                    description = token?.let { stringResource(R.string.token_set, it[0]) } ?: stringResource(R.string.token_not_set),
+                    enabled = enabled,
+                    onItemClick = settingViewModel::openApiTokenDialog,
+                    showTrailingIcon = false,
+                    showLeadingIcon = true,
+                    leadingIcon = {
+                        Icon(
+                            ImageVector.vectorResource(id = R.drawable.ic_key),
+                            contentDescription = stringResource(R.string.key_icon)
+                        )
+                    }
+                )
+            }
             SettingItem(
                 modifier = Modifier.height(64.dp),
                 title = stringResource(R.string.api_model),
-                description = model,
+                description = model ?: stringResource(R.string.select_model_file),
                 enabled = enabled,
-                onItemClick = settingViewModel::openApiModelDialog,
+                onItemClick = {
+                    if (apiType == ApiType.OFFLINE_AI) {
+                        // Launch file picker for GGUF files
+                        modelFilePicker.launch(arrayOf("*/*"))
+                    } else {
+                        settingViewModel.openApiModelDialog()
+                    }
+                },
                 showTrailingIcon = false,
                 showLeadingIcon = true,
                 leadingIcon = {

@@ -15,6 +15,13 @@ class SettingRepositoryImpl @Inject constructor(
 
     override suspend fun fetchPlatforms(): List<Platform> = ApiType.entries.map { apiType ->
         val status = settingDataSource.getStatus(apiType)
+        
+        // One-time migration: Enable Offline AI if it was never explicitly configured
+        // This ensures existing users get Offline AI enabled after the update
+        if (apiType == ApiType.OFFLINE_AI && status == null) {
+            settingDataSource.updateStatus(ApiType.OFFLINE_AI, true)
+        }
+        
         val apiUrl = when (apiType) {
             ApiType.OPENAI -> settingDataSource.getAPIUrl(apiType) ?: ModelConstants.OPENAI_API_URL
             ApiType.ANTHROPIC -> settingDataSource.getAPIUrl(apiType) ?: ModelConstants.ANTHROPIC_API_URL
@@ -36,9 +43,19 @@ class SettingRepositoryImpl @Inject constructor(
             ApiType.OFFLINE_AI -> ModelConstants.DEFAULT_PROMPT
         }
 
+        // Enable Offline AI by default (no API key needed)
+        // TODO: Remove the force-enable after initial testing period
+        val isEnabled = if (apiType == ApiType.OFFLINE_AI) {
+            // Force enable Offline AI - always available
+            true
+        } else {
+            // Other platforms require explicit enabling
+            status == true
+        }
+
         Platform(
             name = apiType,
-            enabled = status == true,
+            enabled = isEnabled,
             apiUrl = apiUrl,
             token = token,
             model = model,

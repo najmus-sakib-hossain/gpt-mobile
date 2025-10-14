@@ -191,6 +191,14 @@
     <string name="offline_ai_brand_text" translatable="false">Powered by SmolLM</string>
     <string name="select_offline_ai_model">Select Offline AI Model</string>
     <string name="select_offline_ai_model_description">Please select a downloaded GGUF model file from your device storage.</string>
+    <string name="select_model_file">Tap to select GGUF model file</string>
+    <string name="change_model_file">Change model file</string>
+    <string name="model_file_selected">Model file selected successfully</string>
+    <string name="copying_model_file">Copying model file to app storage…</string>
+    <string name="error_copying_model_file">Error copying model file. Please try again.</string>
+    <string name="error_selecting_model_file">Error selecting model file.</string>
+    <string name="please_select_offline_model">Please select a model file in Offline AI Settings before creating a chat.</string>
+    <string name="model_not_selected_warning">⚠️ Model not selected. Go to Offline AI Settings first.</string>
     <string name="offline_ai_help" translatable="false">https://huggingface.co/models?library=gguf&amp;sort=trending</string>
     <string name="model_path">Model Path</string>
     <string name="custom">Custom</string>

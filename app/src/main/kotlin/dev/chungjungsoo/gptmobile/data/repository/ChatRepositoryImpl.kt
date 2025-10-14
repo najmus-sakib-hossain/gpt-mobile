@@ -274,47 +274,53 @@ constructor(
                         settingRepository.fetchPlatforms().firstOrNull { it.name == ApiType.OFFLINE_AI }
                 )
         
-        // Build ChatML format prompt
-        val prompt = buildString {
-            append("<|system|>\n")
-            append(platform.systemPrompt ?: ModelConstants.DEFAULT_PROMPT)
-            append("\n")
-            
-            // Add history
-            (history + listOf(question)).forEach { message ->
-                when (message.platformType) {
-                    null -> {
-                        append("<|user|>\n")
-                        append(message.content)
-                        append("\n")
-                    }
-                    ApiType.OFFLINE_AI -> {
-                        append("<|assistant|>\n")
-                        append(message.content)
-                        append("\n")
-                    }
-                    else -> {}
-                }
-            }
-            
-            append("<|assistant|>\n")
-        }
-        
         // Get model path from platform.model (should be the downloaded file path)
         val modelPath = platform.model ?: throw IllegalStateException("No offline model selected")
         
-        // Load model if not already loaded
-        if (!llmService.isModelLoaded() || llmService.getLoadedModelPath() != modelPath) {
-            llmService.loadModel(modelPath, contextSize = 4096)
+        Log.d("ChatRepositoryImpl", "Attempting to use offline model at: $modelPath")
+        
+        // Convert content URI to file path if needed
+        val actualFilePath = dev.chungjungsoo.gptmobile.util.FileUtil.ensureModelFileExists(appContext, modelPath)
+        if (actualFilePath == null) {
+            throw IllegalStateException("Failed to access offline model from: $modelPath. The file may not exist or cannot be read.")
         }
         
-        // Generate text with streaming
-        return llmService.generateText(
-                prompt = prompt,
-                maxTokens = ModelConstants.ANTHROPIC_MAXIMUM_TOKEN,
-                temperature = platform.temperature ?: 0.7f,
-                topP = platform.topP ?: 0.9f
-        )
+        Log.d("ChatRepositoryImpl", "Using model file at: $actualFilePath")
+        
+        // Load model if not already loaded - includes system prompt
+        if (!llmService.isModelLoaded() || llmService.getLoadedModelPath() != actualFilePath) {
+            val systemPrompt = platform.systemPrompt ?: ModelConstants.DEFAULT_PROMPT
+            val loadSuccess = llmService.loadModel(
+                modelPath = actualFilePath, 
+                contextSize = 4096,
+                systemPrompt = systemPrompt
+            )
+            if (!loadSuccess) {
+                throw IllegalStateException("Failed to load offline model from: $actualFilePath. Please verify the file is a valid GGUF model.")
+            }
+            Log.d("ChatRepositoryImpl", "Model loaded successfully from: $actualFilePath")
+            
+            // Add chat history to the model
+            history.forEach { message ->
+                when (message.platformType) {
+                    null -> {
+                        // User message
+                        llmService.addUserMessage(message.content)
+                    }
+                    ApiType.OFFLINE_AI -> {
+                        // Assistant message (previous responses)
+                        llmService.addAssistantMessage(message.content)
+                    }
+                    else -> {
+                        // Ignore messages from other platforms
+                    }
+                }
+            }
+            Log.d("ChatRepositoryImpl", "Chat history added (${history.size} messages)")
+        }
+        
+        // Generate response using SmolLM's chat API
+        return llmService.getResponse(question.content)
                 .map<String, ApiState> { token -> ApiState.Success(token) }
                 .catch { throwable -> emit(ApiState.Error(throwable.message ?: "Unknown error")) }
                 .onStart { emit(ApiState.Loading) }
