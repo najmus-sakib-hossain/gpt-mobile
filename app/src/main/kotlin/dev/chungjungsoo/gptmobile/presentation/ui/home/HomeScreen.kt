@@ -243,8 +243,8 @@ fun HomeScreen(
                     isAtBottom = isAtBottom,
                     textInput = chatInput,
                     onTextChange = { chatInput = it },
-                    selectedModel = platformState.firstOrNull { it.enabled }?.name?.toString() ?: "SmolLM",
-                    onModelClick = { homeViewModel.openSelectModelDialog() },
+                    currentProvider = platformState.firstOrNull { it.enabled }?.name ?: ApiType.OPENAI,
+                    onProviderClick = { homeViewModel.openSelectModelDialog() },
                     onSendMessage = {
                         if (chatInput.isNotEmpty()) {
                             // Handle send message
@@ -271,6 +271,9 @@ fun HomeScreen(
                     },
                     onAddMedia = {
                         Toast.makeText(context, "Add media feature coming soon", Toast.LENGTH_SHORT).show()
+                    },
+                    onMentionClick = {
+                        Toast.makeText(context, "Mention feature coming soon", Toast.LENGTH_SHORT).show()
                     }
                 )
             }

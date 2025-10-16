@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import dev.chungjungsoo.gptmobile.data.model.ApiType
 import kotlinx.coroutines.launch
 
 enum class InputBarState {
@@ -46,27 +47,38 @@ enum class InputBarState {
 
 /**
  * Animated container that morphs between full input bar and FAB
+ * Default: Full input bar shown at bottom, FAB appears only when scrolling up
  */
 @Composable
 fun AnimatedInputFab(
     isAtBottom: Boolean,
     textInput: String,
     onTextChange: (String) -> Unit,
-    selectedModel: String,
-    onModelClick: () -> Unit,
+    currentProvider: ApiType,
+    onProviderClick: () -> Unit,
     onSendMessage: () -> Unit,
     onVoiceMemo: () -> Unit,
     onLiveAI: () -> Unit,
     onNewTextPrompt: () -> Unit,
     onAddMedia: () -> Unit,
+    onMentionClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var currentState by remember { mutableStateOf(InputBarState.FAB) }
     var showSpeedDial by remember { mutableStateOf(false) }
     
-    // Determine state based on scroll position
+    // Derive current state directly from isAtBottom - ensures immediate response
+    val currentState by remember {
+        androidx.compose.runtime.derivedStateOf {
+            if (isAtBottom) {
+                InputBarState.FULL_BAR
+            } else {
+                InputBarState.FAB
+            }
+        }
+    }
+    
+    // Hide speed dial when scrolling
     LaunchedEffect(isAtBottom) {
-        currentState = if (isAtBottom) InputBarState.FULL_BAR else InputBarState.FAB
         if (!isAtBottom) {
             showSpeedDial = false
         }
@@ -101,56 +113,57 @@ fun AnimatedInputFab(
             )
         }
         
-        // Animated transition between Full Input Bar and FAB
-        Box(
+        // Full Input Bar (visible at bottom by default) - Full width
+        AnimatedVisibility(
+            visible = currentState == InputBarState.FULL_BAR,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
+            ) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(300)
+            ) + fadeOut(animationSpec = tween(200)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .zIndex(3f)
         ) {
-            // Full Input Bar (visible at bottom)
-            AnimatedVisibility(
-                visible = currentState == InputBarState.FULL_BAR,
-                enter = slideInVertically(
-                    initialOffsetY = { it },
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
-                ) + fadeIn(animationSpec = tween(300)),
-                exit = slideOutVertically(
-                    targetOffsetY = { it },
-                    animationSpec = tween(300)
-                ) + fadeOut(animationSpec = tween(200))
-            ) {
-                FullInputBar(
-                    selectedModel = selectedModel,
-                    textInput = textInput,
-                    onTextChange = onTextChange,
-                    onModelClick = onModelClick,
-                    onSendClick = onSendMessage,
-                    onVoiceClick = onVoiceMemo,
-                    onLiveAIClick = onLiveAI
+            FullInputBar(
+                currentProvider = currentProvider,
+                textInput = textInput,
+                onTextChange = onTextChange,
+                onProviderClick = onProviderClick,
+                onSearchTypeClick = { /* Handle search type change */ },
+                onContextClick = { /* Handle context change */ },
+                onMentionClick = onMentionClick,
+                onSendClick = onSendMessage,
+                onVoiceClick = onVoiceMemo,
+                onLiveAIClick = onLiveAI
+            )
+        }
+        
+        // Floating Action Button (visible when scrolled) - Positioned on right
+        AnimatedVisibility(
+            visible = currentState == InputBarState.FAB,
+            enter = fadeIn(animationSpec = tween(400)) + androidx.compose.animation.scaleIn(
+                initialScale = 0.3f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
                 )
-            }
-            
-            // Floating Action Button (visible when scrolled)
-            AnimatedVisibility(
-                visible = currentState == InputBarState.FAB,
-                enter = fadeIn(animationSpec = tween(400)) + androidx.compose.animation.scaleIn(
-                    initialScale = 0.3f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
-                ),
-                exit = fadeOut(animationSpec = tween(200)) + androidx.compose.animation.scaleOut(
-                    targetScale = 0.3f,
-                    animationSpec = tween(200)
-                ),
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
+            ),
+            exit = fadeOut(animationSpec = tween(200)) + androidx.compose.animation.scaleOut(
+                targetScale = 0.3f,
+                animationSpec = tween(200)
+            ),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .zIndex(3f)
+        ) {
                 FloatingActionButton(
                     onClick = { showSpeedDial = true },
                     shape = CircleShape,
@@ -173,12 +186,12 @@ fun AnimatedInputFab(
                     )
                 }
             }
-        }
     }
 }
 
 /**
  * Helper to track if LazyColumn is at bottom
+ * Returns true when at bottom (show full input bar) or when not scrolled (default state)
  */
 @Composable
 fun rememberIsAtBottom(
@@ -187,8 +200,13 @@ fun rememberIsAtBottom(
     val isAtBottom = remember {
         androidx.compose.runtime.derivedStateOf {
             val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            lastVisibleItem?.index == listState.layoutInfo.totalItemsCount - 1 &&
-                    lastVisibleItem.offset + lastVisibleItem.size <= listState.layoutInfo.viewportEndOffset
+            // Return true if at bottom OR if list hasn't been scrolled (default state)
+            if (lastVisibleItem == null) {
+                true // Default state - show full input bar
+            } else {
+                lastVisibleItem.index == listState.layoutInfo.totalItemsCount - 1 &&
+                        lastVisibleItem.offset + lastVisibleItem.size <= listState.layoutInfo.viewportEndOffset
+            }
         }
     }
     return isAtBottom.value

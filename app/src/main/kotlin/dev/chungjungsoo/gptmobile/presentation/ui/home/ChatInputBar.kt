@@ -1,6 +1,7 @@
 package dev.chungjungsoo.gptmobile.presentation.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -10,13 +11,20 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,13 +32,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.List
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.KeyboardVoice
 import androidx.compose.material3.DropdownMenu
@@ -43,152 +57,619 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import coil.compose.AsyncImage
+import dev.chungjungsoo.gptmobile.R
+import dev.chungjungsoo.gptmobile.data.model.ApiType
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * Full input bar that appears at the bottom of the screen
- * Components: [Model Selector] [Tools] [@Mention] [Text Input] [Action Button]
+ * Transparent background with collapsible left icons when input is focused
+ * Auto-unfocuses after 5 seconds of inactivity
+ * Moves to top with full width when text is long, grows up to 500px max height
  */
 @Composable
 fun FullInputBar(
     modifier: Modifier = Modifier,
-    selectedModel: String = "SmolLM",
+    currentProvider: ApiType = ApiType.OPENAI,
     textInput: String = "",
     onTextChange: (String) -> Unit = {},
-    onModelClick: () -> Unit = {},
-    onToolsClick: () -> Unit = {},
+    onProviderClick: () -> Unit = {},
+    onSearchTypeClick: () -> Unit = {},
+    onContextClick: () -> Unit = {},
     onMentionClick: () -> Unit = {},
     onSendClick: () -> Unit = {},
     onVoiceClick: () -> Unit = {},
     onLiveAIClick: () -> Unit = {},
-    isLiveAIMode: Boolean = false
+    selectedSearchType: String = "Search",
+    selectedContext: String = "Chat"
 ) {
-    var showToolsMenu by remember { mutableStateOf(false) }
+    var showSearchTypeMenu by remember { mutableStateOf(false) }
+    var showContextMenu by remember { mutableStateOf(false) }
+    var showMentionMenu by remember { mutableStateOf(false) }
+    var isInputFocused by remember { mutableStateOf(false) }
+    var showExpandedIcons by remember { mutableStateOf(false) }
+    var actionMode by remember { mutableIntStateOf(0) } // 0: Live AI, 1: Send, 2: Voice
+    var lastInteractionTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
     
-    Surface(
-        modifier = modifier
-            .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 8.dp,
-        tonalElevation = 2.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+    // Determine if text is long (more than 2 lines worth of text ~60 chars)
+    val isTextLong = textInput.length > 60
+    val showTopInput = isTextLong && isInputFocused
+    
+    // Auto-unfocus after 5 seconds of inactivity
+    LaunchedEffect(isInputFocused, lastInteractionTime) {
+        if (isInputFocused) {
+            coroutineScope.launch {
+                delay(5000) // 5 seconds
+                val timeSinceLastInteraction = System.currentTimeMillis() - lastInteractionTime
+                if (timeSinceLastInteraction >= 5000) {
+                    focusManager.clearFocus()
+                }
+            }
+        }
+    }
+    
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Top expanded input when text is long
+        AnimatedVisibility(
+            visible = showTopInput,
+            enter = slideInVertically(
+                initialOffsetY = { -it },
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+            ) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(
+                targetOffsetY = { -it },
+                animationSpec = tween(300)
+            ) + fadeOut(animationSpec = tween(200))
+        ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 8.dp,
+            tonalElevation = 2.dp
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Model Selector
-                ModelSelectorButton(
-                    modelName = selectedModel,
-                    onClick = onModelClick
-                )
-                
-                // Tools & Options
-                Box {
-                    IconButton(
-                        onClick = { showToolsMenu = true },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Tools & Options",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    
-                    DropdownMenu(
-                        expanded = showToolsMenu,
-                        onDismissRequest = { showToolsMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Settings") },
-                            onClick = {
-                                onToolsClick()
-                                showToolsMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Live AI") },
-                            onClick = {
-                                onLiveAIClick()
-                                showToolsMenu = false
-                            }
-                        )
-                    }
-                }
-                
-                // @Mention/Collaborator
+                // Cancel button
                 IconButton(
-                    onClick = onMentionClick,
-                    modifier = Modifier.size(40.dp)
+                    onClick = {
+                        focusManager.clearFocus()
+                        onTextChange("")
+                    },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .padding(top = 4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Mention",
-                        tint = MaterialTheme.colorScheme.secondary
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cancel",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 
-                // Smart Text Input Box
+                // Expanded text input with max height
                 OutlinedTextField(
                     value = textInput,
-                    onValueChange = onTextChange,
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Type a message...") },
+                    onValueChange = { 
+                        lastInteractionTime = System.currentTimeMillis()
+                        onTextChange(it)
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(max = 500.dp)
+                        .onFocusEvent { focusState ->
+                            isInputFocused = focusState.isFocused
+                            if (focusState.isFocused) {
+                                lastInteractionTime = System.currentTimeMillis()
+                            }
+                            if (!focusState.isFocused) {
+                                showExpandedIcons = false
+                            }
+                        },
+                    placeholder = { Text("Type your message...") },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
-                    shape = RoundedCornerShape(24.dp),
-                    maxLines = 4,
-                    leadingIcon = {
-                        IconButton(onClick = { /* Add attachment */ }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Add,
-                                contentDescription = "Add",
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    },
+                    shape = RoundedCornerShape(16.dp),
+                    maxLines = Int.MAX_VALUE,
                     trailingIcon = {
-                        IconButton(onClick = onVoiceClick) {
-                            Icon(
-                                imageVector = Icons.Rounded.KeyboardVoice,
-                                contentDescription = "Voice",
-                                modifier = Modifier.size(20.dp)
-                            )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(0.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 2.dp)
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    lastInteractionTime = System.currentTimeMillis()
+                                    onVoiceClick()
+                                },
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .padding(0.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.KeyboardVoice,
+                                    contentDescription = "Voice",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    lastInteractionTime = System.currentTimeMillis()
+                                    /* Add attachment */
+                                },
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .padding(0.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = "Add",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 )
-                
-                // Gestural Action Button (Send/Voice/Live AI)
-                GesturalActionButton(
-                    hasText = textInput.isNotEmpty(),
-                    isLiveAIMode = isLiveAIMode,
-                    onSendClick = onSendClick,
-                    onVoiceClick = onVoiceClick,
-                    onLiveAIClick = onLiveAIClick
+            }
+        }
+    }
+    
+    // Bottom input bar (shown when text is short or unfocused)
+    AnimatedVisibility(
+        visible = !showTopInput,
+        enter = slideInVertically(
+            initialOffsetY = { it },
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+        ) + fadeIn(animationSpec = tween(300)),
+        exit = slideOutVertically(
+            targetOffsetY = { it },
+            animationSpec = tween(300)
+        ) + fadeOut(animationSpec = tween(200))
+    ) {
+        BottomInputBar(
+            currentProvider = currentProvider,
+            textInput = textInput,
+            onTextChange = onTextChange,
+            onProviderClick = onProviderClick,
+            onSearchTypeClick = onSearchTypeClick,
+            onContextClick = onContextClick,
+            onMentionClick = onMentionClick,
+            onSendClick = onSendClick,
+            onVoiceClick = onVoiceClick,
+            onLiveAIClick = onLiveAIClick,
+            isInputFocused = isInputFocused,
+            onFocusChanged = { focused ->
+                isInputFocused = focused
+                if (focused) {
+                    lastInteractionTime = System.currentTimeMillis()
+                }
+                if (!focused) {
+                    showExpandedIcons = false
+                }
+            },
+            showExpandedIcons = showExpandedIcons,
+            onExpandedIconsChanged = { showExpandedIcons = it },
+            actionMode = actionMode,
+            onActionModeChanged = { actionMode = it },
+            lastInteractionTime = lastInteractionTime,
+            onInteraction = { lastInteractionTime = System.currentTimeMillis() }
+        )
+    }
+    }
+}
+
+/**
+ * Bottom input bar component - compact view with truncated text
+ */
+@Composable
+private fun BottomInputBar(
+    modifier: Modifier = Modifier,
+    currentProvider: ApiType,
+    textInput: String,
+    onTextChange: (String) -> Unit,
+    onProviderClick: () -> Unit,
+    onSearchTypeClick: () -> Unit,
+    onContextClick: () -> Unit,
+    onMentionClick: () -> Unit,
+    onSendClick: () -> Unit,
+    onVoiceClick: () -> Unit,
+    onLiveAIClick: () -> Unit,
+    isInputFocused: Boolean,
+    onFocusChanged: (Boolean) -> Unit,
+    showExpandedIcons: Boolean,
+    onExpandedIconsChanged: (Boolean) -> Unit,
+    actionMode: Int,
+    onActionModeChanged: (Int) -> Unit,
+    lastInteractionTime: Long,
+    onInteraction: () -> Unit
+) {
+    var showSearchTypeMenu by remember { mutableStateOf(false) }
+    var showContextMenu by remember { mutableStateOf(false) }
+    var showMentionMenu by remember { mutableStateOf(false) }
+    
+    // Transparent background, no elevation
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Collapsible left icons with animations
+            AnimatedVisibility(
+                visible = isInputFocused && !showExpandedIcons,
+                enter = fadeIn(animationSpec = tween(300)) + 
+                        expandVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
+                exit = fadeOut(animationSpec = tween(200)) + 
+                       shrinkVertically(animationSpec = tween(200))
+            ) {
+                // Single expandable menu icon when focused
+                IconButton(
+                    onClick = { onExpandedIconsChanged(!showExpandedIcons) },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More Options",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+            
+            // All 4 icons when not focused or when expanded
+            AnimatedVisibility(
+                visible = !isInputFocused || showExpandedIcons,
+                enter = fadeIn(animationSpec = tween(300)) + 
+                        expandVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
+                exit = fadeOut(animationSpec = tween(200)) + 
+                       shrinkVertically(animationSpec = tween(200))
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // 1. Provider Logo
+                    ProviderLogoButton(
+                        provider = currentProvider,
+                        onClick = onProviderClick
+                    )
+                    
+                    // 2. Search Type
+                    Box {
+                        IconButton(
+                            onClick = { showSearchTypeMenu = true },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search Type",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showSearchTypeMenu,
+                            onDismissRequest = { showSearchTypeMenu = false }
+                        ) {
+                            listOf("Search", "Deep Search", "Fast", "Image", "Video").forEach { type ->
+                                DropdownMenuItem(
+                                    text = { Text(type) },
+                                    onClick = {
+                                        onSearchTypeClick()
+                                        showSearchTypeMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    // 3. Context Selector
+                    Box {
+                        IconButton(
+                            onClick = { showContextMenu = true },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.List,
+                                contentDescription = "Context",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showContextMenu,
+                            onDismissRequest = { showContextMenu = false }
+                        ) {
+                            listOf("Chat", "Project", "Workspace").forEach { context ->
+                                DropdownMenuItem(
+                                    text = { Text(context) },
+                                    onClick = {
+                                        onContextClick()
+                                        showContextMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    // 4. Person/Mention Icon
+                    Box {
+                        IconButton(
+                            onClick = { showMentionMenu = true },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Mention",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showMentionMenu,
+                            onDismissRequest = { showMentionMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Add Person") },
+                                onClick = {
+                                    onMentionClick()
+                                    showMentionMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Remove Person") },
+                                onClick = {
+                                    onMentionClick()
+                                    showMentionMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Text Input - expands to fill available space, truncates when unfocused
+            OutlinedTextField(
+                value = textInput,
+                onValueChange = { 
+                    onInteraction()
+                    onTextChange(it)
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusEvent { focusState ->
+                        onFocusChanged(focusState.isFocused)
+                    },
+                placeholder = { 
+                    Text(
+                        "Chat",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    ) 
+                },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(24.dp),
+                maxLines = if (isInputFocused) 4 else 1,
+                singleLine = !isInputFocused,
+                trailingIcon = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(0.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 2.dp)
+                    ) {
+                        IconButton(
+                            onClick = {
+                                onInteraction()
+                                onVoiceClick()
+                            },
+                            modifier = Modifier
+                                .size(28.dp)
+                                .padding(0.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.KeyboardVoice,
+                                contentDescription = "Voice",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                onInteraction()
+                                /* Add attachment */
+                            },
+                            modifier = Modifier
+                                .size(28.dp)
+                                .padding(0.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = "Add",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            )
+            
+            // Swipeable Action Button - Now on the right side
+            SwipeableActionButton(
+                currentMode = actionMode,
+                onModeChange = onActionModeChanged,
+                onAction = {
+                    onInteraction()
+                    when (actionMode) {
+                        0 -> onLiveAIClick()
+                        1 -> onSendClick()
+                        2 -> onVoiceClick()
+                    }
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Provider logo button (Google, OpenAI, Anthropic, etc.)
+ */
+@Composable
+fun ProviderLogoButton(
+    provider: ApiType,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(40.dp)
+    ) {
+        // You can add actual logos here
+        Icon(
+            imageVector = when (provider) {
+                ApiType.GOOGLE -> Icons.Default.Search
+                ApiType.OPENAI -> Icons.Default.Face
+                ApiType.ANTHROPIC -> Icons.Default.Person
+                ApiType.OFFLINE_AI -> Icons.Default.Face
+                else -> Icons.Default.Face
+            },
+            contentDescription = "Provider: ${provider.name}",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(28.dp)
+        )
+    }
+}
+
+/**
+ * Avatar button with Unsplash image
+ */
+@Composable
+fun AvatarButton(
+    onClick: () -> Unit,
+    imageUrl: String = "https://source.unsplash.com/random/100x100/?portrait"
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        modifier = Modifier.size(40.dp)
+    ) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = "Add People",
+            modifier = Modifier.size(40.dp),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(R.drawable.ic_hamburger)
+        )
+    }
+}
+
+/**
+ * Swipeable action button that changes modes
+ */
+@Composable
+fun SwipeableActionButton(
+    currentMode: Int,
+    onModeChange: (Int) -> Unit,
+    onAction: () -> Unit
+) {
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    val scope = rememberCoroutineScope()
+    
+    val icons = listOf(
+        Icons.Outlined.PlayArrow, // Live AI
+        Icons.Default.Send,        // Send
+        Icons.Default.KeyboardVoice // Voice
+    )
+    
+    val colors = listOf(
+        MaterialTheme.colorScheme.tertiary,
+        MaterialTheme.colorScheme.primary,
+        MaterialTheme.colorScheme.secondary
+    )
+    
+    Surface(
+        onClick = onAction,
+        shape = RoundedCornerShape(12.dp),
+        color = colors[currentMode],
+        modifier = Modifier
+            .size(48.dp)
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        if (offsetX > 50) {
+                            // Swipe right - next mode
+                            onModeChange((currentMode + 1) % 3)
+                        } else if (offsetX < -50) {
+                            // Swipe left - previous mode
+                            onModeChange((currentMode + 2) % 3)
+                        }
+                        offsetX = 0f
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        offsetX += dragAmount
+                    }
                 )
             }
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Icon(
+                imageVector = icons[currentMode],
+                contentDescription = when (currentMode) {
+                    0 -> "Live AI"
+                    1 -> "Send"
+                    else -> "Voice"
+                },
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
         }
     }
 }
