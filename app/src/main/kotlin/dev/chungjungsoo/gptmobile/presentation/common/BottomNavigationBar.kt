@@ -1,16 +1,5 @@
 package dev.chungjungsoo.gptmobile.presentation.common
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -19,12 +8,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import dev.chungjungsoo.gptmobile.R
+import dev.chungjungsoo.gptmobile.presentation.icons.SolarIcons
 
 // NOTE: You now have access to 2500+ Material Icons Extended!
 // To use any icon, simply import it like this:
@@ -47,8 +38,8 @@ import dev.chungjungsoo.gptmobile.R
 
 data class BottomNavItem(
         val title: String,
-        val selectedIcon: ImageVector,
-        val unselectedIcon: ImageVector,
+        val selectedIcon: Int,
+        val unselectedIcon: Int,
         val route: String
 )
 
@@ -58,32 +49,32 @@ fun BottomNavigationBar(navController: NavHostController) {
             listOf(
                     BottomNavItem(
                             title = stringResource(R.string.home),
-                            selectedIcon = Icons.Filled.Home,
-                            unselectedIcon = Icons.Outlined.Home,
+                            selectedIcon = SolarIcons.HomeAngleBold,
+                            unselectedIcon = SolarIcons.HomeAngleLine,
                             route = Route.CHAT_LIST
                     ),
                     BottomNavItem(
                             title = stringResource(R.string.variants),
-                            selectedIcon = Icons.Filled.Star,
-                            unselectedIcon = Icons.Outlined.Star,
+                            selectedIcon = SolarIcons.CupStarBold,
+                            unselectedIcon = SolarIcons.CupStarLine,
                             route = Route.VARIANTS
                     ),
                     BottomNavItem(
                             title = stringResource(R.string.automations),
-                            selectedIcon = Icons.Filled.Settings,
-                            unselectedIcon = Icons.Outlined.Settings,
+                            selectedIcon = SolarIcons.SettingsBold,
+                            unselectedIcon = SolarIcons.SettingsLine,
                             route = Route.AUTOMATIONS
                     ),
                     BottomNavItem(
                             title = stringResource(R.string.agents),
-                            selectedIcon = Icons.Filled.Person,
-                            unselectedIcon = Icons.Outlined.Person,
+                            selectedIcon = SolarIcons.UserBold,
+                            unselectedIcon = SolarIcons.UserLine,
                             route = Route.AGENTS
                     ),
                     BottomNavItem(
                             title = stringResource(R.string.library),
-                            selectedIcon = Icons.Filled.Menu,
-                            unselectedIcon = Icons.Outlined.Menu,
+                            selectedIcon = SolarIcons.LibraryBold,
+                            unselectedIcon = SolarIcons.LibraryLine,
                             route = Route.LIBRARY
                     )
             )
@@ -107,8 +98,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                     },
                     icon = {
                         Icon(
-                                imageVector =
-                                        if (selected) item.selectedIcon else item.unselectedIcon,
+                                painter = painterResource(id = if (selected) item.selectedIcon else item.unselectedIcon),
                                 contentDescription = item.title
                         )
                     },

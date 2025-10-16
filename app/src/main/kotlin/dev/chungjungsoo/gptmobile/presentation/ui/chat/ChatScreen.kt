@@ -70,6 +70,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.AnnotatedString
@@ -83,6 +84,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chungjungsoo.gptmobile.R
 import dev.chungjungsoo.gptmobile.data.database.entity.Message
 import dev.chungjungsoo.gptmobile.data.model.ApiType
+import dev.chungjungsoo.gptmobile.presentation.icons.SolarIcons
 import dev.chungjungsoo.gptmobile.util.DefaultHashMap
 import dev.chungjungsoo.gptmobile.util.multiScrollStateSaver
 import java.io.File
@@ -561,6 +563,9 @@ fun ScrollToBottomButton(onClick: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     ) {
-        Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.scroll_to_bottom_icon))
+        Icon(
+            painter = painterResource(id = SolarIcons.ArrowDownLine),
+            contentDescription = stringResource(R.string.scroll_to_bottom_icon)
+        )
     }
 }

@@ -35,19 +35,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.KeyboardVoice
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -90,6 +85,7 @@ import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import dev.chungjungsoo.gptmobile.R
 import dev.chungjungsoo.gptmobile.data.model.ApiType
+import dev.chungjungsoo.gptmobile.presentation.icons.SolarIcons
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -239,7 +235,7 @@ fun FullInputBar(
                                     .padding(0.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.KeyboardVoice,
+                                    painter = painterResource(id = SolarIcons.MicrophoneLine),
                                     contentDescription = "Voice",
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -468,7 +464,7 @@ private fun BottomInputBar(
                             modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Person,
+                                painter = painterResource(id = SolarIcons.UserLine),
                                 contentDescription = "Mention",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
@@ -541,7 +537,7 @@ private fun BottomInputBar(
                                 .padding(0.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.KeyboardVoice,
+                                painter = painterResource(id = SolarIcons.MicrophoneLine),
                                 contentDescription = "Voice",
                                 modifier = Modifier.size(16.dp)
                             )
@@ -609,7 +605,7 @@ fun ProviderLogoButton(
             imageVector = when (provider) {
                 ApiType.GOOGLE -> Icons.Default.Search
                 ApiType.OPENAI -> Icons.Default.Face
-                ApiType.ANTHROPIC -> Icons.Default.Person
+                ApiType.ANTHROPIC -> Icons.Default.Face
                 ApiType.OFFLINE_AI -> Icons.Default.Face
                 else -> Icons.Default.Face
             },
@@ -661,9 +657,9 @@ fun SwipeableActionButton(
     val displayMode = if (hasText) 1 else currentMode
     
     val icons = listOf(
-        Icons.Outlined.PlayArrow, // Live AI
-        Icons.Default.Send,        // Send
-        Icons.Default.KeyboardVoice // Voice
+        SolarIcons.PlayLine,        // Live AI
+        SolarIcons.SendLine,         // Send
+        SolarIcons.MicrophoneLine   // Voice
     )
     
     val colors = listOf(
@@ -705,7 +701,7 @@ fun SwipeableActionButton(
             modifier = Modifier.padding(12.dp)
         ) {
             Icon(
-                imageVector = icons[displayMode],
+                painter = painterResource(id = icons[displayMode]),
                 contentDescription = when (displayMode) {
                     0 -> "Live AI"
                     1 -> "Send"
@@ -779,11 +775,11 @@ fun GesturalActionButton(
             modifier = Modifier.padding(12.dp)
         ) {
             Icon(
-                imageVector = when {
-                    hasText -> Icons.Default.Send
-                    isLiveAIMode -> Icons.Default.Face
-                    else -> Icons.Default.KeyboardVoice
-                },
+                painter = painterResource(id = when {
+                    hasText -> SolarIcons.SendLine
+                    isLiveAIMode -> SolarIcons.PlayLine
+                    else -> SolarIcons.MicrophoneLine
+                }),
                 contentDescription = when {
                     hasText -> "Send"
                     isLiveAIMode -> "Live AI"

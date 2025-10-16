@@ -39,8 +39,6 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -76,6 +74,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -95,6 +94,7 @@ import dev.chungjungsoo.gptmobile.data.dto.Platform
 import dev.chungjungsoo.gptmobile.data.dto.exampleModelsList
 import dev.chungjungsoo.gptmobile.data.model.ApiType
 import dev.chungjungsoo.gptmobile.presentation.common.PlatformCheckBoxItem
+import dev.chungjungsoo.gptmobile.presentation.icons.SolarIcons
 import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.OfflineModelViewModel
 import dev.chungjungsoo.gptmobile.util.getPlatformTitleResources
 import kotlinx.coroutines.CoroutineScope
@@ -793,7 +793,7 @@ fun HomeTopAppBar(
                     onClick = actionOnClick
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Delete,
+                        painter = painterResource(id = SolarIcons.TrashLine),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         contentDescription = stringResource(R.string.delete)
                     )
@@ -920,7 +920,7 @@ fun SelectPlatformDialog(
                                         .padding(horizontal = 16.dp, vertical = 4.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Outlined.Share,
+                                        painter = painterResource(id = SolarIcons.ShareLine),
                                         contentDescription = "Select Model",
                                         modifier = Modifier.size(20.dp)
                                     )
