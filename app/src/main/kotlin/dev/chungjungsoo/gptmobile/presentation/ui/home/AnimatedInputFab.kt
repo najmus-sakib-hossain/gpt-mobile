@@ -40,6 +40,7 @@ import androidx.compose.ui.zIndex
 import dev.chungjungsoo.gptmobile.data.model.ApiType
 import kotlinx.coroutines.launch
 
+
 enum class InputBarState {
     FULL_BAR,      // Full input bar at bottom
     FAB,           // Floating action button
