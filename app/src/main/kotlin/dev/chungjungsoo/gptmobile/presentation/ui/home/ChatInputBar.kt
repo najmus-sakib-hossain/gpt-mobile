@@ -354,12 +354,16 @@ private fun BottomInputBar(
                 .background(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 )
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(
+                    start = if (isInputFocused && !showExpandedIcons) 0.dp else 12.dp,
+                    end = if (isInputFocused && !showExpandedIcons) 12.dp else 12.dp,
+                    top = 8.dp,
+                    bottom = 8.dp
+                )
         ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
             // Collapsible left icons with animations
             AnimatedVisibility(
@@ -560,6 +564,9 @@ private fun BottomInputBar(
                     }
                 }
             )
+            
+            // Gap between text input and action button
+            Spacer(modifier = Modifier.width(8.dp))
             
             // Swipeable Action Button - Now on the right side
             SwipeableActionButton(

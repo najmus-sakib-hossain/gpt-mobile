@@ -12,6 +12,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -128,6 +129,7 @@ fun AnimatedInputFab(
                 animationSpec = tween(300)
             ) + fadeOut(animationSpec = tween(200)),
             modifier = Modifier
+                .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .zIndex(3f)
         ) {
@@ -141,7 +143,8 @@ fun AnimatedInputFab(
                 onMentionClick = onMentionClick,
                 onSendClick = onSendMessage,
                 onVoiceClick = onVoiceMemo,
-                onLiveAIClick = onLiveAI
+                onLiveAIClick = onLiveAI,
+                modifier = Modifier.fillMaxWidth()
             )
         }
         
