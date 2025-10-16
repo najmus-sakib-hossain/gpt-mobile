@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
@@ -69,6 +70,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusManager
@@ -130,14 +132,12 @@ fun FullInputBar(
     val showTopInput = isTextLong && isInputFocused
     
     // Auto-unfocus after 5 seconds of inactivity
-    LaunchedEffect(isInputFocused, lastInteractionTime) {
+    LaunchedEffect(isInputFocused, lastInteractionTime, textInput) {
         if (isInputFocused) {
-            coroutineScope.launch {
-                delay(5000) // 5 seconds
-                val timeSinceLastInteraction = System.currentTimeMillis() - lastInteractionTime
-                if (timeSinceLastInteraction >= 5000) {
-                    focusManager.clearFocus()
-                }
+            delay(5000) // 5 seconds
+            val timeSinceLastInteraction = System.currentTimeMillis() - lastInteractionTime
+            if (timeSinceLastInteraction >= 5000 && isInputFocused) {
+                focusManager.clearFocus()
             }
         }
     }
@@ -155,12 +155,22 @@ fun FullInputBar(
                 animationSpec = tween(300)
             ) + fadeOut(animationSpec = tween(200))
         ) {
+        // Glassmorphism surface
         Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+                .fillMaxWidth()
+                .blur(0.dp), // Blur will be applied to background
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
             shadowElevation = 8.dp,
             tonalElevation = 2.dp
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    )
+            ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -168,19 +178,19 @@ fun FullInputBar(
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Cancel button
+                // Back/Cancel button - unfocuses and moves input back to bottom
                 IconButton(
                     onClick = {
                         focusManager.clearFocus()
-                        onTextChange("")
+                        // Don't clear text, just unfocus
                     },
                     modifier = Modifier
                         .size(40.dp)
                         .padding(top = 4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cancel",
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -252,6 +262,7 @@ fun FullInputBar(
                         }
                     }
                 )
+            }
             }
         }
     }
@@ -329,12 +340,22 @@ private fun BottomInputBar(
     var showContextMenu by remember { mutableStateOf(false) }
     var showMentionMenu by remember { mutableStateOf(false) }
     
-    // Transparent background, no elevation
-    Box(
+    // Glassmorphism background
+    Surface(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+        shadowElevation = 4.dp,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -544,16 +565,23 @@ private fun BottomInputBar(
             SwipeableActionButton(
                 currentMode = actionMode,
                 onModeChange = onActionModeChanged,
+                hasText = textInput.isNotEmpty(),
                 onAction = {
                     onInteraction()
-                    when (actionMode) {
-                        0 -> onLiveAIClick()
-                        1 -> onSendClick()
-                        2 -> onVoiceClick()
+                    // If there's text, always send. Otherwise use the mode
+                    if (textInput.isNotEmpty()) {
+                        onSendClick()
+                    } else {
+                        when (actionMode) {
+                            0 -> onLiveAIClick()
+                            1 -> onSendClick()
+                            2 -> onVoiceClick()
+                        }
                     }
                 }
             )
         }
+    }
     }
 }
 
@@ -610,15 +638,20 @@ fun AvatarButton(
 
 /**
  * Swipeable action button that changes modes
+ * Shows Send icon when there's text, otherwise cycles through modes
  */
 @Composable
 fun SwipeableActionButton(
     currentMode: Int,
     onModeChange: (Int) -> Unit,
-    onAction: () -> Unit
+    onAction: () -> Unit,
+    hasText: Boolean = false
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
+    
+    // If there's text, always show Send icon, otherwise use the current mode
+    val displayMode = if (hasText) 1 else currentMode
     
     val icons = listOf(
         Icons.Outlined.PlayArrow, // Live AI
@@ -634,27 +667,30 @@ fun SwipeableActionButton(
     
     Surface(
         onClick = onAction,
-        shape = RoundedCornerShape(12.dp),
-        color = colors[currentMode],
+        shape = CircleShape,  // Changed to fully circular
+        color = colors[displayMode],
         modifier = Modifier
             .size(48.dp)
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragEnd = {
-                        if (offsetX > 50) {
-                            // Swipe right - next mode
-                            onModeChange((currentMode + 1) % 3)
-                        } else if (offsetX < -50) {
-                            // Swipe left - previous mode
-                            onModeChange((currentMode + 2) % 3)
+            .pointerInput(hasText) {
+                // Only allow swiping when there's no text
+                if (!hasText) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (offsetX > 50) {
+                                // Swipe right - next mode
+                                onModeChange((currentMode + 1) % 3)
+                            } else if (offsetX < -50) {
+                                // Swipe left - previous mode
+                                onModeChange((currentMode + 2) % 3)
+                            }
+                            offsetX = 0f
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX += dragAmount
                         }
-                        offsetX = 0f
-                    },
-                    onHorizontalDrag = { change, dragAmount ->
-                        change.consume()
-                        offsetX += dragAmount
-                    }
-                )
+                    )
+                }
             }
     ) {
         Box(
@@ -662,8 +698,8 @@ fun SwipeableActionButton(
             modifier = Modifier.padding(12.dp)
         ) {
             Icon(
-                imageVector = icons[currentMode],
-                contentDescription = when (currentMode) {
+                imageVector = icons[displayMode],
+                contentDescription = when (displayMode) {
                     0 -> "Live AI"
                     1 -> "Send"
                     else -> "Voice"
