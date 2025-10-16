@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -65,6 +66,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -120,6 +122,10 @@ fun HomeScreen(
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    
+    // Input bar state
+    var chatInput by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
     
     // File picker for Offline AI model selection
     val offlineModelPicker = rememberLauncherForActivityResult(
@@ -211,28 +217,61 @@ fun HomeScreen(
                 onMenuClick = { scope.launch { drawerState.open() } }
             )
         },
-        floatingActionButton = {
-            NewChatButton(expanded = true, onClick = {
-                val enabledApiTypes = platformState.filter { it.enabled }.map { it.name }
-                if (enabledApiTypes.size == 1) {
-                    // Navigate to new chat directly if only one platform is enabled
-                    navigateToNewChat(enabledApiTypes)
-                } else {
-                    homeViewModel.openSelectModelDialog()
-                }
-            })
-        },
         content = { paddingValues ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
             ) {
-                HomeContent(
-                    navController = navController,
-                    chatListState = chatListState,
-                    onExistingChatClick = onExistingChatClick,
-                    homeViewModel = homeViewModel
+                // Main content
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                ) {
+                    HomeContent(
+                        navController = navController,
+                        chatListState = chatListState,
+                        onExistingChatClick = onExistingChatClick,
+                        homeViewModel = homeViewModel,
+                        listState = listState
+                    )
+                }
+                
+                // Animated Input Bar / FAB
+                val isAtBottom = rememberIsAtBottom(listState)
+                AnimatedInputFab(
+                    isAtBottom = isAtBottom,
+                    textInput = chatInput,
+                    onTextChange = { chatInput = it },
+                    selectedModel = platformState.firstOrNull { it.enabled }?.name?.toString() ?: "SmolLM",
+                    onModelClick = { homeViewModel.openSelectModelDialog() },
+                    onSendMessage = {
+                        if (chatInput.isNotEmpty()) {
+                            // Handle send message
+                            val enabledApiTypes = platformState.filter { it.enabled }.map { it.name }
+                            if (enabledApiTypes.isNotEmpty()) {
+                                navigateToNewChat(enabledApiTypes)
+                            }
+                            chatInput = ""
+                        }
+                    },
+                    onVoiceMemo = {
+                        Toast.makeText(context, "Voice memo feature coming soon", Toast.LENGTH_SHORT).show()
+                    },
+                    onLiveAI = {
+                        Toast.makeText(context, "Live AI feature coming soon", Toast.LENGTH_SHORT).show()
+                    },
+                    onNewTextPrompt = {
+                        val enabledApiTypes = platformState.filter { it.enabled }.map { it.name }
+                        if (enabledApiTypes.size == 1) {
+                            navigateToNewChat(enabledApiTypes)
+                        } else {
+                            homeViewModel.openSelectModelDialog()
+                        }
+                    },
+                    onAddMedia = {
+                        Toast.makeText(context, "Add media feature coming soon", Toast.LENGTH_SHORT).show()
+                    }
                 )
             }
         }
@@ -285,14 +324,16 @@ fun HomeContent(
     navController: NavHostController,
     chatListState: HomeViewModel.ChatListState,
     onExistingChatClick: (ChatRoom) -> Unit,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    listState: LazyListState = rememberLazyListState()
 ) {
     val offlineModelViewModel: OfflineModelViewModel = hiltViewModel()
     val offlineModelsState by offlineModelViewModel.uiState.collectAsStateWithLifecycle()
 
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Offline AI Section
