@@ -55,8 +55,8 @@ fun BottomNavigationBar(navController: NavHostController) {
                     ),
                     BottomNavItem(
                             title = stringResource(R.string.variants),
-                            selectedIcon = SolarIcons.CupStarBold,
-                            unselectedIcon = SolarIcons.CupStarLine,
+                            selectedIcon = SolarIcons.LayersMinimalisticBold,
+                            unselectedIcon = SolarIcons.LayersMinimalisticLine,
                             route = Route.VARIANTS
                     ),
                     BottomNavItem(
@@ -67,8 +67,8 @@ fun BottomNavigationBar(navController: NavHostController) {
                     ),
                     BottomNavItem(
                             title = stringResource(R.string.agents),
-                            selectedIcon = SolarIcons.UserBold,
-                            unselectedIcon = SolarIcons.UserLine,
+                            selectedIcon = SolarIcons.GhostBold,
+                            unselectedIcon = SolarIcons.GhostLine,
                             route = Route.AGENTS
                     ),
                     BottomNavItem(

@@ -94,4 +94,12 @@ object SolarIcons {
     // Arrow Down Icons
     val ArrowDownLine: Int @Composable get() = R.drawable.ic_arrow_down_line
     val ArrowDownBold: Int @Composable get() = R.drawable.ic_arrow_down_bold
+    
+    // Layers Minimalistic Icons
+    val LayersMinimalisticLine: Int @Composable get() = R.drawable.ic_layers_minimalistic_line
+    val LayersMinimalisticBold: Int @Composable get() = R.drawable.ic_layers_minimalistic_bold
+    
+    // Ghost Icons
+    val GhostLine: Int @Composable get() = R.drawable.ic_ghost_line
+    val GhostBold: Int @Composable get() = R.drawable.ic_ghost_bold
 }
