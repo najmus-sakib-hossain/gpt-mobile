@@ -7,7 +7,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -61,8 +60,8 @@ fun BottomNavigationBar(navController: NavHostController) {
                     ),
                     BottomNavItem(
                             title = stringResource(R.string.automations),
-                            selectedIcon = SolarIcons.SettingsBold,
-                            unselectedIcon = SolarIcons.SettingsLine,
+                            selectedIcon = SolarIcons.HourglassLineLine,
+                            unselectedIcon = SolarIcons.HourglassLineBold,
                             route = Route.AUTOMATIONS
                     ),
                     BottomNavItem(
