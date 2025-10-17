@@ -14,8 +14,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Animated Rainbow Border with Blur/Glow Effect
@@ -29,47 +33,81 @@ fun AnimatedRainbowBorder(
     enabled: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    // Debug: Log when parameters change
+    LaunchedEffect(borderRadius, borderWidth) {
+        println("🌈 AnimatedRainbowBorder - borderRadius: $borderRadius, borderWidth: $borderWidth")
+    }
+    
     if (!enabled) {
         content()
         return
     }
 
-    // Infinite animation for rainbow effect
+    // Infinite animation for rainbow rotation
     val infiniteTransition = rememberInfiniteTransition(label = "rainbow")
     val animationProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 1f,
+        targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
+            animation = tween(4000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "rainbow_progress"
+        label = "rainbow_rotation"
     )
     
-    // Pulsing glow animation
+    // Pulsing glow animation for intensity
     val glowPulse by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
+        initialValue = 0.7f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = FastOutSlowInEasing),
+            animation = tween(2000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "glow_pulse"
     )
+    
+    // Shadow spread animation
+    val shadowSpread by infiniteTransition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shadow_spread"
+    )
 
+    // Capture current values in state to force recomposition
+    val currentRadius by rememberUpdatedState(borderRadius)
+    val currentWidth by rememberUpdatedState(borderWidth)
+    
     Box(modifier = modifier) {
         // Content
         content()
 
-        // Border overlay
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        // Border overlay with CSS-like filter effects
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    // Force hardware acceleration and cache the layer
+                    // This improves performance significantly
+                    compositingStrategy = CompositingStrategy.Offscreen
+                }
+        ) {
             val width = size.width
             val height = size.height
-            val strokeWidth = borderWidth.dp.toPx()
-            val radius = borderRadius.dp.toPx()
+            // Use captured state values that trigger recomposition
+            val strokeWidth = currentWidth.dp.toPx()
+            val radius = currentRadius.dp.toPx()
+            
+            // Force snapshot read of animation values to trigger recomposition
+            val animProgress = animationProgress
+            val pulse = glowPulse
+            val spread = shadowSpread
 
             // Rainbow colors
-            val colors = listOf(
+            val baseColors = listOf(
                 Color(0xFFFF0000), // Red
                 Color(0xFFFF7F00), // Orange
                 Color(0xFFFFFF00), // Yellow
@@ -80,39 +118,101 @@ fun AnimatedRainbowBorder(
                 Color(0xFFFF0000)  // Red again for smooth loop
             )
 
-            // Create gradient brush that rotates
+            // Calculate rotation angle in radians
+            val angleRad = animProgress * (PI / 180f).toFloat()
+            
+            // Create rotating gradient brush with smooth color interpolation
+            val centerX = width / 2
+            val centerY = height / 2
+            
+            // Generate colors for sweep gradient with rotation
+            val rotatedColors = mutableListOf<Color>()
+            val numStops = 8
+            for (i in 0 until numStops) {
+                val angle = (i.toFloat() / numStops * 360f + animProgress) % 360f
+                val colorIndex = (angle / 360f * baseColors.size).toInt() % baseColors.size
+                val nextIndex = (colorIndex + 1) % baseColors.size
+                val fraction = (angle / 360f * baseColors.size) % 1f
+                
+                // Interpolate between colors for smooth transition
+                val color = Color(
+                    red = baseColors[colorIndex].red * (1 - fraction) + baseColors[nextIndex].red * fraction,
+                    green = baseColors[colorIndex].green * (1 - fraction) + baseColors[nextIndex].green * fraction,
+                    blue = baseColors[colorIndex].blue * (1 - fraction) + baseColors[nextIndex].blue * fraction,
+                    alpha = 1f
+                )
+                rotatedColors.add(color)
+            }
+            rotatedColors.add(rotatedColors[0]) // Close the loop
+            
             val brush = Brush.sweepGradient(
-                colors = colors,
-                center = Offset(width / 2, height / 2)
+                colors = rotatedColors,
+                center = Offset(centerX, centerY)
             )
 
-            // Draw multiple layers for blur/glow effect (CSS-like blur simulation)
-            val glowLayers = 5
-            for (i in glowLayers downTo 1) {
-                val layerAlpha = (0.15f / i) * glowPulse
-                val layerStrokeWidth = strokeWidth + (i * 2f)
+            // ============================================
+            // LAYER 1: Outer Shadow (CSS drop-shadow) - Optimized
+            // Simulates: filter: drop-shadow(0 0 20px rgba(rainbow, 0.6))
+            // ============================================
+            val shadowLayers = 3  // Further reduced for better performance
+            for (i in shadowLayers downTo 1) {
+                val shadowOffset = i * 4f * spread
+                val shadowAlpha = (0.12f / i) * pulse
+                val shadowStrokeWidth = strokeWidth + shadowOffset
                 
                 drawRoundRect(
                     brush = brush,
                     topLeft = Offset(
-                        (strokeWidth - layerStrokeWidth) / 2 + layerStrokeWidth / 2,
-                        (strokeWidth - layerStrokeWidth) / 2 + layerStrokeWidth / 2
+                        shadowStrokeWidth / 2,
+                        shadowStrokeWidth / 2
                     ),
                     size = Size(
-                        width - layerStrokeWidth,
-                        height - layerStrokeWidth
+                        width - shadowStrokeWidth,
+                        height - shadowStrokeWidth
                     ),
                     cornerRadius = CornerRadius(radius, radius),
                     style = Stroke(
-                        width = layerStrokeWidth,
+                        width = shadowStrokeWidth / 2,
                         cap = StrokeCap.Round
                     ),
-                    alpha = layerAlpha,
+                    alpha = shadowAlpha,
                     blendMode = BlendMode.Plus
                 )
             }
 
-            // Draw the main sharp rainbow border
+            // ============================================
+            // LAYER 2: Blur Effect (CSS blur) - Optimized
+            // Simulates: filter: blur(8px)
+            // ============================================
+            val blurLayers = 2  // Further reduced for better performance
+            for (i in blurLayers downTo 1) {
+                val blurOffset = i * 2.5f
+                val blurAlpha = (0.15f / i) * pulse
+                val blurStrokeWidth = strokeWidth + blurOffset
+                
+                drawRoundRect(
+                    brush = brush,
+                    topLeft = Offset(
+                        strokeWidth / 2,
+                        strokeWidth / 2
+                    ),
+                    size = Size(
+                        width - strokeWidth,
+                        height - strokeWidth
+                    ),
+                    cornerRadius = CornerRadius(radius, radius),
+                    style = Stroke(
+                        width = blurStrokeWidth,
+                        cap = StrokeCap.Round
+                    ),
+                    alpha = blurAlpha,
+                    blendMode = BlendMode.Plus
+                )
+            }
+
+            // ============================================
+            // LAYER 3: Main Border (Sharp, crisp edge)
+            // ============================================
             drawRoundRect(
                 brush = brush,
                 topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
@@ -125,19 +225,39 @@ fun AnimatedRainbowBorder(
                 alpha = 1.0f
             )
             
-            // Additional bright glow layer for extra luminosity
+            // ============================================
+            // LAYER 4: Highlight Glow (Bright edge)
+            // Simulates: filter: brightness(1.2) saturate(1.3)
+            // ============================================
             drawRoundRect(
                 brush = brush,
                 topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
                 size = Size(width - strokeWidth, height - strokeWidth),
                 cornerRadius = CornerRadius(radius, radius),
                 style = Stroke(
-                    width = strokeWidth * 0.5f,
+                    width = strokeWidth,
                     cap = StrokeCap.Round
                 ),
-                alpha = 0.6f * glowPulse,
+                alpha = 0.6f * pulse,
                 blendMode = BlendMode.Plus
             )
-        }
-    }
+            
+            // ============================================
+            // LAYER 5: Ultra Bright Core
+            // Creates the "neon" effect center
+            // ============================================
+            drawRoundRect(
+                brush = brush,
+                topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+                size = Size(width - strokeWidth, height - strokeWidth),
+                cornerRadius = CornerRadius(radius, radius),
+                style = Stroke(
+                    width = strokeWidth * 0.2f,
+                    cap = StrokeCap.Round
+                ),
+                alpha = 0.7f * pulse,
+                blendMode = BlendMode.Screen
+            )
+        }  // End Canvas
+    }  // End Box
 }
