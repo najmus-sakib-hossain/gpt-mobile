@@ -3,9 +3,11 @@ package dev.chungjungsoo.gptmobile.presentation.common
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -14,12 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * Animated Rainbow Border with Blur/Glow Effect
@@ -77,77 +75,73 @@ fun AnimatedRainbowBorder(
         label = "shadow_spread"
     )
 
-    // Capture current values in state to force recomposition
-    val currentRadius by rememberUpdatedState(borderRadius)
-    val currentWidth by rememberUpdatedState(borderWidth)
-    
     Box(modifier = modifier) {
         // Content
         content()
 
         // Border overlay with CSS-like filter effects
-        Canvas(
+        // Use Spacer with drawWithCache instead of Canvas for proper invalidation
+        Spacer(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer {
-                    // Force hardware acceleration and cache the layer
-                    // This improves performance significantly
-                    compositingStrategy = CompositingStrategy.Offscreen
-                }
-        ) {
-            val width = size.width
-            val height = size.height
-            // Use captured state values that trigger recomposition
-            val strokeWidth = currentWidth.dp.toPx()
-            val radius = currentRadius.dp.toPx()
-            
-            // Force snapshot read of animation values to trigger recomposition
-            val animProgress = animationProgress
-            val pulse = glowPulse
-            val spread = shadowSpread
+                .drawWithCache {
+                    // This lambda re-executes when borderRadius, borderWidth, or animations change
+                    val width = size.width
+                    val height = size.height
+                    val strokeWidth = borderWidth.dp.toPx()
+                    val radius = borderRadius.dp.toPx()
+                    
+                    // Capture animation values
+                    val animProgress = animationProgress
+                    val pulse = glowPulse
+                    val spread = shadowSpread
 
-            // Rainbow colors
-            val baseColors = listOf(
-                Color(0xFFFF0000), // Red
-                Color(0xFFFF7F00), // Orange
-                Color(0xFFFFFF00), // Yellow
-                Color(0xFF00FF00), // Green
-                Color(0xFF0000FF), // Blue
-                Color(0xFF4B0082), // Indigo
-                Color(0xFF9400D3), // Violet
-                Color(0xFFFF0000)  // Red again for smooth loop
-            )
+                    // Rainbow colors
+                    val baseColors = listOf(
+                        Color(0xFFFF0000), // Red
+                        Color(0xFFFF7F00), // Orange
+                        Color(0xFFFFFF00), // Yellow
+                        Color(0xFF00FF00), // Green
+                        Color(0xFF0000FF), // Blue
+                        Color(0xFF4B0082), // Indigo
+                        Color(0xFF9400D3), // Violet
+                        Color(0xFFFF0000)  // Red again for smooth loop
+                    )
 
-            // Calculate rotation angle in radians
-            val angleRad = animProgress * (PI / 180f).toFloat()
-            
-            // Create rotating gradient brush with smooth color interpolation
-            val centerX = width / 2
-            val centerY = height / 2
-            
-            // Generate colors for sweep gradient with rotation
-            val rotatedColors = mutableListOf<Color>()
-            val numStops = 8
-            for (i in 0 until numStops) {
-                val angle = (i.toFloat() / numStops * 360f + animProgress) % 360f
-                val colorIndex = (angle / 360f * baseColors.size).toInt() % baseColors.size
-                val nextIndex = (colorIndex + 1) % baseColors.size
-                val fraction = (angle / 360f * baseColors.size) % 1f
-                
-                // Interpolate between colors for smooth transition
-                val color = Color(
-                    red = baseColors[colorIndex].red * (1 - fraction) + baseColors[nextIndex].red * fraction,
-                    green = baseColors[colorIndex].green * (1 - fraction) + baseColors[nextIndex].green * fraction,
-                    blue = baseColors[colorIndex].blue * (1 - fraction) + baseColors[nextIndex].blue * fraction,
-                    alpha = 1f
-                )
-                rotatedColors.add(color)
-            }
-            rotatedColors.add(rotatedColors[0]) // Close the loop
-            
-            val brush = Brush.sweepGradient(
-                colors = rotatedColors,
-                center = Offset(centerX, centerY)
+                    // Calculate rotation angle in radians
+                    val angleRad = animProgress * (PI / 180f).toFloat()
+                    
+                    // Create rotating gradient brush with smooth color interpolation
+                    val centerX = width / 2
+                    val centerY = height / 2
+                    
+                    // Generate colors for sweep gradient with rotation
+                    val rotatedColors = mutableListOf<Color>()
+                    val numStops = 8
+                    for (i in 0 until numStops) {
+                        val angle = (i.toFloat() / numStops * 360f + animProgress) % 360f
+                        val colorIndex = (angle / 360f * baseColors.size).toInt() % baseColors.size
+                        val nextIndex = (colorIndex + 1) % baseColors.size
+                        val fraction = (angle / 360f * baseColors.size) % 1f
+                        
+                        // Interpolate between colors for smooth transition
+                        val color = Color(
+                            red = baseColors[colorIndex].red * (1 - fraction) + baseColors[nextIndex].red * fraction,
+                            green = baseColors[colorIndex].green * (1 - fraction) + baseColors[nextIndex].green * fraction,
+                            blue = baseColors[colorIndex].blue * (1 - fraction) + baseColors[nextIndex].blue * fraction,
+                            alpha = 1f
+                        )
+                        rotatedColors.add(color)
+                    }
+                    rotatedColors.add(rotatedColors[0]) // Close the loop
+                    
+                    val brush = Brush.sweepGradient(
+                        colors = rotatedColors,
+                        center = Offset(centerX, centerY)
+                    )
+                    
+                    // Return onDrawBehind block
+                    onDrawBehind {
             )
 
             // ============================================
@@ -258,6 +252,8 @@ fun AnimatedRainbowBorder(
                 alpha = 0.7f * pulse,
                 blendMode = BlendMode.Screen
             )
-        }  // End Canvas
+                    }  // End onDrawBehind
+                }  // End drawWithCache
+        )  // End Spacer
     }  // End Box
 }
