@@ -86,7 +86,7 @@ object SolarIcons {
     val GlobalLine: Int @Composable get() = R.drawable.ic_global_line
     
     // Home Icons
-    val HomeAngleLine: Int @Composable get() = R.drawable.ic_home_angle_line
+    val HomeAngleLine: Int @Composable get() = R.drawable.ic_home_angle_line_1
     val HomeAngleBold: Int @Composable get() = R.drawable.ic_home_angle_bold
     
     // Hourglass Icons
