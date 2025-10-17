@@ -25,7 +25,7 @@ import kotlin.math.PI
 fun AnimatedRainbowBorder(
     modifier: Modifier = Modifier,
     borderRadius: Float = 53f,
-    borderWidth: Float = 8f,
+    borderWidth: Float = 9f,
     enabled: Boolean = true,
     content: @Composable () -> Unit
 ) {
