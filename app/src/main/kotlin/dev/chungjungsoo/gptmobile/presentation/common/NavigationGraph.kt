@@ -61,30 +61,48 @@ fun NavGraphBuilder.startScreenNavigation(navController: NavHostController) {
 fun SetupNavGraph(navController: NavHostController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            AppDrawerContent(navController, drawerState, scope, settingOnClick = { navController.navigate(Route.SETTING_ROUTE) { launchSingleTop = true } })
-        }
+    
+    // Get border settings from HomeViewModel
+    val homeViewModel: dev.chungjungsoo.gptmobile.presentation.ui.home.HomeViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    val borderSettings by homeViewModel.borderSettings.collectAsStateWithLifecycle()
+    
+    // Rainbow border wrapping everything - appears on top of all content
+    AnimatedRainbowBorder(
+        modifier = Modifier.fillMaxSize(),
+        borderRadius = borderSettings.borderRadius,
+        borderWidth = borderSettings.borderWidth,
+        enabled = borderSettings.enabled
     ) {
-        Scaffold(
-            bottomBar = { BottomNavigationBar(navController) }
-        ) { innerPadding ->
-            // Remove top padding from innerPadding so screens with their own top bars are not pushed down
-            val contentPadding = PaddingValues(
-                start = innerPadding.calculateLeftPadding(LayoutDirection.Ltr),
-                top = 0.dp,
-                end = innerPadding.calculateRightPadding(LayoutDirection.Ltr),
-                bottom = innerPadding.calculateBottomPadding()
-            )
-            NavHost(
-                modifier = Modifier
-                    .padding(contentPadding)
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                navController = navController,
-                startDestination = Route.CHAT_LIST
-            ) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                AppDrawerContent(
+                    navController, 
+                    drawerState, 
+                    scope, 
+                    settingOnClick = { navController.navigate(Route.SETTING_ROUTE) { launchSingleTop = true } },
+                    borderSettingsOnClick = { homeViewModel.openBorderSettingsDialog() }
+                )
+            }
+        ) {
+            Scaffold(
+                bottomBar = { BottomNavigationBar(navController) }
+            ) { innerPadding ->
+                // Remove top padding from innerPadding so screens with their own top bars are not pushed down
+                val contentPadding = PaddingValues(
+                    start = innerPadding.calculateLeftPadding(LayoutDirection.Ltr),
+                    top = 0.dp,
+                    end = innerPadding.calculateRightPadding(LayoutDirection.Ltr),
+                    bottom = innerPadding.calculateBottomPadding()
+                )
+                NavHost(
+                    modifier = Modifier
+                        .padding(contentPadding)
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    navController = navController,
+                    startDestination = Route.CHAT_LIST
+                ) {
                 homeScreenNavigation(navController, drawerState, scope)
                 startScreenNavigation(navController)
                 setupNavigation(navController)
@@ -125,9 +143,10 @@ fun SetupNavGraph(navController: NavHostController) {
                     homeViewModel = homeViewModel
                 )
             }
-        }
-    }
-}
+                }  // End NavHost
+            }  // End Scaffold innerPadding
+        }  // End ModalNavigationDrawer
+    }  // End AnimatedRainbowBorder - wraps everything
 }
 fun NavGraphBuilder.setupNavigation(
     navController: NavHostController

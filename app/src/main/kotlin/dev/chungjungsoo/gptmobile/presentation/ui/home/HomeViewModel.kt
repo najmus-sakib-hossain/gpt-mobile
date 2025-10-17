@@ -43,6 +43,16 @@ class HomeViewModel @Inject constructor(
     private val _showDeleteWarningDialog = MutableStateFlow(false)
     val showDeleteWarningDialog: StateFlow<Boolean> = _showDeleteWarningDialog.asStateFlow()
 
+    private val _showBorderSettingsDialog = MutableStateFlow(false)
+    val showBorderSettingsDialog: StateFlow<Boolean> = _showBorderSettingsDialog.asStateFlow()
+
+    private val _borderSettings = MutableStateFlow(dev.chungjungsoo.gptmobile.data.dto.BorderSetting())
+    val borderSettings: StateFlow<dev.chungjungsoo.gptmobile.data.dto.BorderSetting> = _borderSettings.asStateFlow()
+
+    init {
+        fetchBorderSettings()
+    }
+
     fun updateCheckedState(platform: Platform) {
         val index = _platformState.value.indexOf(platform)
 
@@ -176,6 +186,35 @@ class HomeViewModel @Inject constructor(
 
         if (_chatListState.value.selected.count { it } == 0) {
             disableSelectionMode()
+        }
+    }
+
+    fun openBorderSettingsDialog() = _showBorderSettingsDialog.update { true }
+
+    fun closeBorderSettingsDialog() = _showBorderSettingsDialog.update { false }
+
+    fun updateBorderEnabled(enabled: Boolean) {
+        _borderSettings.update { it.copy(enabled = enabled) }
+    }
+
+    fun updateBorderRadius(radius: Float) {
+        _borderSettings.update { it.copy(borderRadius = radius) }
+    }
+
+    fun updateBorderWidth(width: Float) {
+        _borderSettings.update { it.copy(borderWidth = width) }
+    }
+
+    fun saveBorderSettings() {
+        viewModelScope.launch {
+            settingRepository.updateBorderSettings(_borderSettings.value)
+        }
+    }
+
+    private fun fetchBorderSettings() {
+        viewModelScope.launch {
+            val settings = settingRepository.fetchBorderSettings()
+            _borderSettings.update { settings }
         }
     }
 }

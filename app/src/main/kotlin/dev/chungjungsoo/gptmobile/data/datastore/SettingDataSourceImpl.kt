@@ -75,6 +75,11 @@ class SettingDataSourceImpl @Inject constructor(
     )
     private val dynamicThemeKey = intPreferencesKey("dynamic_mode")
     private val themeModeKey = intPreferencesKey("theme_mode")
+    
+    // Border settings keys
+    private val borderEnabledKey = booleanPreferencesKey("border_enabled")
+    private val borderRadiusKey = floatPreferencesKey("border_radius")
+    private val borderWidthKey = floatPreferencesKey("border_width")
 
     override suspend fun updateDynamicTheme(theme: DynamicTheme) {
         dataStore.edit { pref ->
@@ -172,5 +177,36 @@ class SettingDataSourceImpl @Inject constructor(
 
     override suspend fun getSystemPrompt(apiType: ApiType): String? = dataStore.data.map { pref ->
         pref[apiSystemPromptMap[apiType]!!]
+    }.first()
+    
+    // Border settings implementation
+    override suspend fun updateBorderEnabled(enabled: Boolean) {
+        dataStore.edit { pref ->
+            pref[borderEnabledKey] = enabled
+        }
+    }
+
+    override suspend fun updateBorderRadius(radius: Float) {
+        dataStore.edit { pref ->
+            pref[borderRadiusKey] = radius
+        }
+    }
+
+    override suspend fun updateBorderWidth(width: Float) {
+        dataStore.edit { pref ->
+            pref[borderWidthKey] = width
+        }
+    }
+
+    override suspend fun getBorderEnabled(): Boolean? = dataStore.data.map { pref ->
+        pref[borderEnabledKey]
+    }.first()
+
+    override suspend fun getBorderRadius(): Float? = dataStore.data.map { pref ->
+        pref[borderRadiusKey]
+    }.first()
+
+    override suspend fun getBorderWidth(): Float? = dataStore.data.map { pref ->
+        pref[borderWidthKey]
     }.first()
 }

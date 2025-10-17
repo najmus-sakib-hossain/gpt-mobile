@@ -23,4 +23,12 @@ interface SettingDataSource {
     suspend fun getTemperature(apiType: ApiType): Float?
     suspend fun getTopP(apiType: ApiType): Float?
     suspend fun getSystemPrompt(apiType: ApiType): String?
+    
+    // Border settings
+    suspend fun updateBorderEnabled(enabled: Boolean)
+    suspend fun updateBorderRadius(radius: Float)
+    suspend fun updateBorderWidth(width: Float)
+    suspend fun getBorderEnabled(): Boolean?
+    suspend fun getBorderRadius(): Float?
+    suspend fun getBorderWidth(): Float?
 }

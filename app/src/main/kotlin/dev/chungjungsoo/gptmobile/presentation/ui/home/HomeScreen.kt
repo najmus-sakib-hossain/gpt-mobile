@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -69,6 +70,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -320,6 +323,23 @@ fun HomeScreen(
             }
         )
     }
+
+    val showBorderSettingsDialog by homeViewModel.showBorderSettingsDialog.collectAsStateWithLifecycle()
+    val borderSettings by homeViewModel.borderSettings.collectAsStateWithLifecycle()
+
+    if (showBorderSettingsDialog) {
+        BorderSettingsDialog(
+            borderSettings = borderSettings,
+            onDismissRequest = homeViewModel::closeBorderSettingsDialog,
+            onEnabledChange = homeViewModel::updateBorderEnabled,
+            onRadiusChange = homeViewModel::updateBorderRadius,
+            onWidthChange = homeViewModel::updateBorderWidth,
+            onSave = {
+                homeViewModel.saveBorderSettings()
+                homeViewModel.closeBorderSettingsDialog()
+            }
+        )
+    }
 }
 
 @Composable
@@ -332,6 +352,7 @@ fun HomeContent(
 ) {
     val offlineModelViewModel: OfflineModelViewModel = hiltViewModel()
     val offlineModelsState by offlineModelViewModel.uiState.collectAsStateWithLifecycle()
+    val borderSettings by homeViewModel.borderSettings.collectAsStateWithLifecycle()
 
     LazyColumn(
         state = listState,
@@ -339,6 +360,17 @@ fun HomeContent(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Border Settings Section - Top Priority
+        item {
+            BorderSettingsCard(
+                borderSettings = borderSettings,
+                onEnabledChange = homeViewModel::updateBorderEnabled,
+                onRadiusChange = homeViewModel::updateBorderRadius,
+                onWidthChange = homeViewModel::updateBorderWidth,
+                onSave = homeViewModel::saveBorderSettings
+            )
+        }
+
         // Offline AI Section
         item {
             OfflineAISection(
@@ -383,6 +415,140 @@ fun HomeContent(
                     onClick = { onExistingChatClick(chatRoom) }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun BorderSettingsCard(
+    borderSettings: dev.chungjungsoo.gptmobile.data.dto.BorderSetting,
+    onEnabledChange: (Boolean) -> Unit,
+    onRadiusChange: (Float) -> Unit,
+    onWidthChange: (Float) -> Unit,
+    onSave: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Header with toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "🌈",
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "Rainbow Border",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                androidx.compose.material3.Switch(
+                    checked = borderSettings.enabled,
+                    onCheckedChange = {
+                        onEnabledChange(it)
+                        onSave()
+                    },
+                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Corner Radius Slider
+            Text(
+                text = "Corner Radius: ${borderSettings.borderRadius.toInt()}dp",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            androidx.compose.material3.Slider(
+                value = borderSettings.borderRadius,
+                onValueChange = onRadiusChange,
+                onValueChangeFinished = onSave,
+                valueRange = 0f..64f,
+                steps = 63,
+                enabled = borderSettings.enabled,
+                modifier = Modifier.padding(vertical = 4.dp),
+                colors = androidx.compose.material3.SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
+                )
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Border Width Slider
+            Text(
+                text = "Border Width: ${borderSettings.borderWidth.toInt()}dp",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            androidx.compose.material3.Slider(
+                value = borderSettings.borderWidth,
+                onValueChange = onWidthChange,
+                onValueChangeFinished = onSave,
+                valueRange = 1f..16f,
+                steps = 14,
+                enabled = borderSettings.enabled,
+                modifier = Modifier.padding(vertical = 4.dp),
+                colors = androidx.compose.material3.SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Preview bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val colors = listOf(
+                        Color(0xFFFF0000), Color(0xFFFF7F00), Color(0xFFFFFF00),
+                        Color(0xFF00FF00), Color(0xFF0000FF), Color(0xFF4B0082),
+                        Color(0xFF9400D3), Color(0xFFFF0000)
+                    )
+                    val brush = Brush.horizontalGradient(colors = colors)
+                    drawRoundRect(
+                        brush = brush,
+                        cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx()),
+                        alpha = if (borderSettings.enabled) 1f else 0.3f
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "✨ Animated glow effect around the entire screen",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -990,6 +1156,116 @@ private fun SelectPlatformDialogPreview() {
         onConfirmation = {},
         onPlatformSelect = {},
         onOfflineModelPick = {}
+    )
+}
+
+@Composable
+fun BorderSettingsDialog(
+    borderSettings: dev.chungjungsoo.gptmobile.data.dto.BorderSetting,
+    onDismissRequest: () -> Unit,
+    onEnabledChange: (Boolean) -> Unit,
+    onRadiusChange: (Float) -> Unit,
+    onWidthChange: (Float) -> Unit,
+    onSave: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    var enabled by remember { mutableStateOf(borderSettings.enabled) }
+    var borderRadius by remember { mutableStateOf(borderSettings.borderRadius) }
+    var borderWidth by remember { mutableStateOf(borderSettings.borderWidth) }
+
+    AlertDialog(
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier
+            .width(configuration.screenWidthDp.dp - 40.dp)
+            .heightIn(max = configuration.screenHeightDp.dp - 80.dp),
+        title = {
+            Text(
+                text = "🌈 Rainbow Border Settings",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Enable/Disable Toggle
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Enable Border", style = MaterialTheme.typography.bodyLarge)
+                    androidx.compose.material3.Switch(
+                        checked = enabled,
+                        onCheckedChange = {
+                            enabled = it
+                            onEnabledChange(it)
+                        }
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Border Radius Slider
+                Text(
+                    text = "Corner Radius: ${borderRadius.toInt()}dp",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                androidx.compose.material3.Slider(
+                    value = borderRadius,
+                    onValueChange = {
+                        borderRadius = it
+                        onRadiusChange(it)
+                    },
+                    valueRange = 0f..64f,
+                    steps = 63,
+                    enabled = enabled,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // Border Width Slider
+                Text(
+                    text = "Border Width: ${borderWidth.toInt()}dp",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                androidx.compose.material3.Slider(
+                    value = borderWidth,
+                    onValueChange = {
+                        borderWidth = it
+                        onWidthChange(it)
+                    },
+                    valueRange = 1f..16f,
+                    steps = 14,
+                    enabled = enabled,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // Preview info
+                Text(
+                    text = "✨ Animated rainbow border with glowing sparkles will appear around the screen!",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+        },
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            TextButton(onClick = onSave) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("Cancel")
+            }
+        }
     )
 }
 

@@ -2,6 +2,7 @@ package dev.chungjungsoo.gptmobile.data.repository
 
 import dev.chungjungsoo.gptmobile.data.ModelConstants
 import dev.chungjungsoo.gptmobile.data.datastore.SettingDataSource
+import dev.chungjungsoo.gptmobile.data.dto.BorderSetting
 import dev.chungjungsoo.gptmobile.data.dto.Platform
 import dev.chungjungsoo.gptmobile.data.dto.ThemeSetting
 import dev.chungjungsoo.gptmobile.data.model.ApiType
@@ -86,5 +87,18 @@ class SettingRepositoryImpl @Inject constructor(
     override suspend fun updateThemes(themeSetting: ThemeSetting) {
         settingDataSource.updateDynamicTheme(themeSetting.dynamicTheme)
         settingDataSource.updateThemeMode(themeSetting.themeMode)
+    }
+    
+    override suspend fun fetchBorderSettings(): dev.chungjungsoo.gptmobile.data.dto.BorderSetting = 
+        dev.chungjungsoo.gptmobile.data.dto.BorderSetting(
+            enabled = settingDataSource.getBorderEnabled() ?: true,
+            borderRadius = settingDataSource.getBorderRadius() ?: 32f,
+            borderWidth = settingDataSource.getBorderWidth() ?: 4f
+        )
+
+    override suspend fun updateBorderSettings(borderSetting: dev.chungjungsoo.gptmobile.data.dto.BorderSetting) {
+        settingDataSource.updateBorderEnabled(borderSetting.enabled)
+        settingDataSource.updateBorderRadius(borderSetting.borderRadius)
+        settingDataSource.updateBorderWidth(borderSetting.borderWidth)
     }
 }

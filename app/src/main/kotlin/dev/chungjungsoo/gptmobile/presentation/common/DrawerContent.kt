@@ -19,7 +19,8 @@ fun AppDrawerContent(
     navController: NavHostController,
     drawerState: DrawerState,
     scope: CoroutineScope,
-    settingOnClick: () -> Unit
+    settingOnClick: () -> Unit,
+    borderSettingsOnClick: (() -> Unit)? = null
 ) {
     ModalDrawerSheet {
         val items = listOf(
@@ -45,6 +46,20 @@ fun AppDrawerContent(
             )
         }
         Spacer(modifier = Modifier.weight(1f)) // Push settings to bottom
+        
+        // Rainbow Border Settings
+        borderSettingsOnClick?.let { onClick ->
+            NavigationDrawerItem(
+                label = { Text("🌈 Border Settings") },
+                selected = false,
+                onClick = {
+                    onClick()
+                    scope.launch { drawerState.close() }
+                },
+                modifier = Modifier
+            )
+        }
+        
         NavigationDrawerItem(
             label = { Text(stringResource(R.string.settings)) },
             selected = false,
