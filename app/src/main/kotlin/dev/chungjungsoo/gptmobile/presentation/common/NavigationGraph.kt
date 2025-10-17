@@ -103,7 +103,7 @@ fun SetupNavGraph(navController: NavHostController) {
                     navController = navController,
                     startDestination = Route.CHAT_LIST
                 ) {
-                homeScreenNavigation(navController, drawerState, scope)
+                homeScreenNavigation(navController, drawerState, scope, homeViewModel)
                 startScreenNavigation(navController)
                 setupNavigation(navController)
                 settingNavigation(navController)
@@ -269,9 +269,15 @@ fun NavGraphBuilder.setupNavigation(
     }
 }
 
-fun NavGraphBuilder.homeScreenNavigation(navController: NavHostController, drawerState: androidx.compose.material3.DrawerState, scope: kotlinx.coroutines.CoroutineScope) {
+fun NavGraphBuilder.homeScreenNavigation(
+    navController: NavHostController,
+    drawerState: androidx.compose.material3.DrawerState,
+    scope: kotlinx.coroutines.CoroutineScope,
+    homeViewModel: HomeViewModel
+) {
     composable(Route.CHAT_LIST) {
         HomeScreen(
+            homeViewModel = homeViewModel,
             settingOnClick = { navController.navigate(Route.SETTING_ROUTE) { launchSingleTop = true } },
             onExistingChatClick = { chatRoom ->
                 val enabledPlatformString = chatRoom.enabledPlatform.joinToString(",") { v -> v.name }

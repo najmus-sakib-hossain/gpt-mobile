@@ -109,7 +109,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
-    homeViewModel: HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel,
     settingOnClick: () -> Unit,
     onExistingChatClick: (ChatRoom) -> Unit,
     navigateToNewChat: (enabledPlatforms: List<ApiType>) -> Unit,
