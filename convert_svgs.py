@@ -4,25 +4,25 @@ SVG to Android Vector Drawable Converter
 Converts all SVG files from images/ to Android drawable XMLs
 """
 
-import os
+from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-def parse_svg_path_data(svg_file):
+def parse_svg_path_data(svg_file: Path) -> tuple[list[dict[str, str]], str, str, str]:
     """Parse SVG file and extract path data"""
     try:
         tree = ET.parse(svg_file)
         root = tree.getroot()
         
-        # Remove namespace if present
-        ns = {'svg': 'http://www.w3.org/2000/svg'}
+        # Remove namespace if present (not used but kept for clarity)
+        # ns = {'svg': 'http://www.w3.org/2000/svg'}
         
-        paths = []
+        paths: list[dict[str, str]] = []
         
         # Find all path elements
         for path in root.iter('{http://www.w3.org/2000/svg}path'):
-            path_data = {}
+            path_data: dict[str, str] = {}
             if 'd' in path.attrib:
                 path_data['pathData'] = path.attrib['d']
             if 'fill' in path.attrib:
@@ -46,7 +46,7 @@ def parse_svg_path_data(svg_file):
         
         # Also check for paths without namespace
         for path in root.iter('path'):
-            path_data = {}
+            path_data: dict[str, str] = {}
             if 'd' in path.attrib:
                 path_data['pathData'] = path.attrib['d']
             if 'fill' in path.attrib:
@@ -71,7 +71,7 @@ def parse_svg_path_data(svg_file):
         
         # Find ellipse elements
         for ellipse in root.iter('{http://www.w3.org/2000/svg}ellipse'):
-            path_data = {}
+            path_data: dict[str, str] = {}
             cx = float(ellipse.attrib.get('cx', 0))
             cy = float(ellipse.attrib.get('cy', 0))
             rx = float(ellipse.attrib.get('rx', 0))
@@ -82,7 +82,7 @@ def parse_svg_path_data(svg_file):
             paths.append(path_data)
         
         for ellipse in root.iter('ellipse'):
-            path_data = {}
+            path_data: dict[str, str] = {}
             cx = float(ellipse.attrib.get('cx', 0))
             cy = float(ellipse.attrib.get('cy', 0))
             rx = float(ellipse.attrib.get('rx', 0))
@@ -104,7 +104,7 @@ def parse_svg_path_data(svg_file):
         print(f"Error parsing {svg_file}: {e}")
         return [], '0 0 24 24', '24', '24'
 
-def svg_color_to_android(color):
+def svg_color_to_android(color: str | None) -> str:
     """Convert SVG color to Android color format"""
     if not color or color == 'none':
         return '@android:color/transparent'
@@ -118,9 +118,9 @@ def svg_color_to_android(color):
         return '@android:color/white'
     return color
 
-def create_vector_drawable(svg_file, output_file):
+def create_vector_drawable(svg_file: Path, output_file: Path) -> bool:
     """Convert SVG to Android Vector Drawable XML"""
-    paths, viewbox, width, height = parse_svg_path_data(svg_file)
+    paths, viewbox, _width, _height = parse_svg_path_data(svg_file)
     
     if not paths:
         print(f"Warning: No paths found in {svg_file}")
@@ -192,7 +192,7 @@ def create_vector_drawable(svg_file, output_file):
     
     return True
 
-def convert_filename(svg_filename):
+def convert_filename(svg_filename: str) -> str:
     """Convert SVG filename to Android drawable naming convention"""
     name = Path(svg_filename).stem
     
@@ -219,7 +219,7 @@ def convert_filename(svg_filename):
     
     return f'ic_{name}.xml'
 
-def main():
+def main() -> None:
     # Paths
     images_dir = Path('images')
     drawable_dir = Path('app/src/main/res/drawable')
@@ -238,7 +238,7 @@ def main():
     print(f"Converting to {drawable_dir}/\n")
     
     success_count = 0
-    failed_files = []
+    failed_files: list[str] = []
     
     for svg_file in svg_files:
         output_name = convert_filename(svg_file.name)

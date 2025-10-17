@@ -151,21 +151,16 @@ fun FullInputBar(
                 animationSpec = tween(300)
             ) + fadeOut(animationSpec = tween(200))
         ) {
-        // Glassmorphism surface
+        // Solid background surface
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .blur(0.dp), // Blur will be applied to background
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                .fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 8.dp,
             tonalElevation = 2.dp
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    )
+                modifier = Modifier.fillMaxWidth()
             ) {
             Row(
                 modifier = Modifier
@@ -336,20 +331,17 @@ private fun BottomInputBar(
     var showContextMenu by remember { mutableStateOf(false) }
     var showMentionMenu by remember { mutableStateOf(false) }
     
-    // Glassmorphism background
+    // Solid background
     Surface(
         modifier = modifier
             .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 4.dp,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                )
                 .padding(
                     start = if (isInputFocused && !showExpandedIcons) 0.dp else 12.dp,
                     end = if (isInputFocused && !showExpandedIcons) 12.dp else 12.dp,
@@ -515,8 +507,8 @@ private fun BottomInputBar(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 ),
                 shape = RoundedCornerShape(24.dp),
                 maxLines = if (isInputFocused) 4 else 1,
@@ -672,6 +664,9 @@ fun SwipeableActionButton(
         onClick = onAction,
         shape = CircleShape,  // Changed to fully circular
         color = colors[displayMode],
+        shadowElevation = 0.dp,  // Remove elevation/shadow
+        tonalElevation = 0.dp,   // Remove tonal elevation
+        border = null,           // Ensure no border
         modifier = Modifier
             .size(48.dp)
             .pointerInput(hasText) {
