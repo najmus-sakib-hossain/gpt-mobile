@@ -142,116 +142,113 @@ fun AnimatedRainbowBorder(
                     
                     // Return onDrawBehind block
                     onDrawBehind {
-            )
+                        // LAYER 1: Outer Shadow (CSS drop-shadow) - Optimized
+                        // Simulates: filter: drop-shadow(0 0 20px rgba(rainbow, 0.6))
+                        // ============================================
+                        val shadowLayers = 3  // Further reduced for better performance
+                        for (i in shadowLayers downTo 1) {
+                            val shadowOffset = i * 4f * spread
+                            val shadowAlpha = (0.12f / i) * pulse
+                            val shadowStrokeWidth = strokeWidth + shadowOffset
+                            
+                            drawRoundRect(
+                                brush = brush,
+                                topLeft = Offset(
+                                    shadowStrokeWidth / 2,
+                                    shadowStrokeWidth / 2
+                                ),
+                                size = Size(
+                                    width - shadowStrokeWidth,
+                                    height - shadowStrokeWidth
+                                ),
+                                cornerRadius = CornerRadius(radius, radius),
+                                style = Stroke(
+                                    width = shadowStrokeWidth / 2,
+                                    cap = StrokeCap.Round
+                                ),
+                                alpha = shadowAlpha,
+                                blendMode = BlendMode.Plus
+                            )
+                        }
 
-            // ============================================
-            // LAYER 1: Outer Shadow (CSS drop-shadow) - Optimized
-            // Simulates: filter: drop-shadow(0 0 20px rgba(rainbow, 0.6))
-            // ============================================
-            val shadowLayers = 3  // Further reduced for better performance
-            for (i in shadowLayers downTo 1) {
-                val shadowOffset = i * 4f * spread
-                val shadowAlpha = (0.12f / i) * pulse
-                val shadowStrokeWidth = strokeWidth + shadowOffset
-                
-                drawRoundRect(
-                    brush = brush,
-                    topLeft = Offset(
-                        shadowStrokeWidth / 2,
-                        shadowStrokeWidth / 2
-                    ),
-                    size = Size(
-                        width - shadowStrokeWidth,
-                        height - shadowStrokeWidth
-                    ),
-                    cornerRadius = CornerRadius(radius, radius),
-                    style = Stroke(
-                        width = shadowStrokeWidth / 2,
-                        cap = StrokeCap.Round
-                    ),
-                    alpha = shadowAlpha,
-                    blendMode = BlendMode.Plus
-                )
-            }
+                        // ============================================
+                        // LAYER 2: Blur Effect (CSS blur) - Optimized
+                        // Simulates: filter: blur(8px)
+                        // ============================================
+                        val blurLayers = 2  // Further reduced for better performance
+                        for (i in blurLayers downTo 1) {
+                            val blurOffset = i * 2.5f
+                            val blurAlpha = (0.15f / i) * pulse
+                            val blurStrokeWidth = strokeWidth + blurOffset
+                            
+                            drawRoundRect(
+                                brush = brush,
+                                topLeft = Offset(
+                                    strokeWidth / 2,
+                                    strokeWidth / 2
+                                ),
+                                size = Size(
+                                    width - strokeWidth,
+                                    height - strokeWidth
+                                ),
+                                cornerRadius = CornerRadius(radius, radius),
+                                style = Stroke(
+                                    width = blurStrokeWidth,
+                                    cap = StrokeCap.Round
+                                ),
+                                alpha = blurAlpha,
+                                blendMode = BlendMode.Plus
+                            )
+                        }
 
-            // ============================================
-            // LAYER 2: Blur Effect (CSS blur) - Optimized
-            // Simulates: filter: blur(8px)
-            // ============================================
-            val blurLayers = 2  // Further reduced for better performance
-            for (i in blurLayers downTo 1) {
-                val blurOffset = i * 2.5f
-                val blurAlpha = (0.15f / i) * pulse
-                val blurStrokeWidth = strokeWidth + blurOffset
-                
-                drawRoundRect(
-                    brush = brush,
-                    topLeft = Offset(
-                        strokeWidth / 2,
-                        strokeWidth / 2
-                    ),
-                    size = Size(
-                        width - strokeWidth,
-                        height - strokeWidth
-                    ),
-                    cornerRadius = CornerRadius(radius, radius),
-                    style = Stroke(
-                        width = blurStrokeWidth,
-                        cap = StrokeCap.Round
-                    ),
-                    alpha = blurAlpha,
-                    blendMode = BlendMode.Plus
-                )
-            }
-
-            // ============================================
-            // LAYER 3: Main Border (Sharp, crisp edge)
-            // ============================================
-            drawRoundRect(
-                brush = brush,
-                topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-                size = Size(width - strokeWidth, height - strokeWidth),
-                cornerRadius = CornerRadius(radius, radius),
-                style = Stroke(
-                    width = strokeWidth,
-                    cap = StrokeCap.Round
-                ),
-                alpha = 1.0f
-            )
-            
-            // ============================================
-            // LAYER 4: Highlight Glow (Bright edge)
-            // Simulates: filter: brightness(1.2) saturate(1.3)
-            // ============================================
-            drawRoundRect(
-                brush = brush,
-                topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-                size = Size(width - strokeWidth, height - strokeWidth),
-                cornerRadius = CornerRadius(radius, radius),
-                style = Stroke(
-                    width = strokeWidth,
-                    cap = StrokeCap.Round
-                ),
-                alpha = 0.6f * pulse,
-                blendMode = BlendMode.Plus
-            )
-            
-            // ============================================
-            // LAYER 5: Ultra Bright Core
-            // Creates the "neon" effect center
-            // ============================================
-            drawRoundRect(
-                brush = brush,
-                topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-                size = Size(width - strokeWidth, height - strokeWidth),
-                cornerRadius = CornerRadius(radius, radius),
-                style = Stroke(
-                    width = strokeWidth * 0.2f,
-                    cap = StrokeCap.Round
-                ),
-                alpha = 0.7f * pulse,
-                blendMode = BlendMode.Screen
-            )
+                        // ============================================
+                        // LAYER 3: Main Border (Sharp, crisp edge)
+                        // ============================================
+                        drawRoundRect(
+                            brush = brush,
+                            topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+                            size = Size(width - strokeWidth, height - strokeWidth),
+                            cornerRadius = CornerRadius(radius, radius),
+                            style = Stroke(
+                                width = strokeWidth,
+                                cap = StrokeCap.Round
+                            ),
+                            alpha = 1.0f
+                        )
+                        
+                        // ============================================
+                        // LAYER 4: Highlight Glow (Bright edge)
+                        // Simulates: filter: brightness(1.2) saturate(1.3)
+                        // ============================================
+                        drawRoundRect(
+                            brush = brush,
+                            topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+                            size = Size(width - strokeWidth, height - strokeWidth),
+                            cornerRadius = CornerRadius(radius, radius),
+                            style = Stroke(
+                                width = strokeWidth,
+                                cap = StrokeCap.Round
+                            ),
+                            alpha = 0.6f * pulse,
+                            blendMode = BlendMode.Plus
+                        )
+                        
+                        // ============================================
+                        // LAYER 5: Ultra Bright Core
+                        // Creates the "neon" effect center
+                        // ============================================
+                        drawRoundRect(
+                            brush = brush,
+                            topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+                            size = Size(width - strokeWidth, height - strokeWidth),
+                            cornerRadius = CornerRadius(radius, radius),
+                            style = Stroke(
+                                width = strokeWidth * 0.2f,
+                                cap = StrokeCap.Round
+                            ),
+                            alpha = 0.7f * pulse,
+                            blendMode = BlendMode.Screen
+                        )
                     }  // End onDrawBehind
                 }  // End drawWithCache
         )  // End Spacer
