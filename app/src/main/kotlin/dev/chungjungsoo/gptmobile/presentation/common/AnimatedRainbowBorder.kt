@@ -229,23 +229,6 @@ fun AnimatedRainbowBorder(
                 alpha = 0.6f * pulse,
                 blendMode = BlendMode.Plus
             )
-            
-            // ============================================
-            // LAYER 5: Ultra Bright Core
-            // Creates the "neon" effect center
-            // ============================================
-            // drawRoundRect(
-            //     brush = brush,
-            //     topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-            //     size = Size(width - strokeWidth, height - strokeWidth),
-            //     cornerRadius = CornerRadius(radius, radius),
-            //     style = Stroke(
-            //         width = strokeWidth * 0.2f,
-            //         cap = StrokeCap.Round
-            //     ),
-            //     alpha = 0.7f * pulse,
-            //     blendMode = BlendMode.Screen
-            // )
-        }  // End Canvas
-    }  // End Box
+        }
+    }
 }
