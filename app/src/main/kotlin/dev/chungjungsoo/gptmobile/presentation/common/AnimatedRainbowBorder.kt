@@ -1,234 +1,397 @@
 package dev.chungjungsoo.gptmobile.presentation.common
 
-import androidx.compose.animation.core.*
+import android.graphics.Matrix
+import android.graphics.PathMeasure
+import android.graphics.SweepGradient
+import android.graphics.Path as AndroidPath
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import kotlin.math.PI
+import dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle
 
-/**
- * Animated Rainbow Border with Blur/Glow Effect
- * Wraps content with a customizable animated rainbow border with CSS-like blur glow
- */
+private val RainbowColors: List<Color> = listOf(
+    Color(0xFFFF0000),
+    Color(0xFFFF7F00),
+    Color(0xFFFFFF00),
+    Color(0xFF00FF00),
+    Color(0xFF0000FF),
+    Color(0xFF4B0082),
+    Color(0xFF9400D3),
+    Color(0xFFFF0000)
+)
+
+private val RainbowBaseStops: FloatArray = run {
+    val step = if (RainbowColors.size > 1) 1f / (RainbowColors.size - 1) else 1f
+    FloatArray(RainbowColors.size) { index -> index * step }
+}
+
+private val RainbowColorInts: IntArray = IntArray(RainbowColors.size) { index ->
+    RainbowColors[index].toArgb()
+}
+
+private data class BorderGeometry(
+    val strokeWidthPx: Float,
+    val radiusPx: Float,
+    val rect: Rect,
+    val outline: Path,
+    val pathMeasure: PathMeasure,
+    val totalLength: Float,
+    val topRightAnchor: Float,
+    val bottomCenterAnchor: Float,
+    val center: Offset,
+    val shader: SweepGradient
+)
+
+private fun buildBorderGeometry(
+    layoutSize: IntSize,
+    density: Density,
+    borderWidth: Float,
+    borderRadius: Float
+): BorderGeometry? {
+    if (layoutSize.width <= 0 || layoutSize.height <= 0) return null
+
+    val widthPx = layoutSize.width.toFloat()
+    val heightPx = layoutSize.height.toFloat()
+    if (widthPx <= 0f || heightPx <= 0f) return null
+
+    val strokeWidthPx = with(density) { borderWidth.dp.toPx() }
+    val radiusPx = with(density) { borderRadius.dp.toPx() }
+    val inset = strokeWidthPx / 2f
+    val rect = Rect(
+        offset = Offset(inset, inset),
+        size = Size(widthPx - strokeWidthPx, heightPx - strokeWidthPx)
+    )
+    if (rect.width <= 0f || rect.height <= 0f) return null
+
+    val outline = Path().apply {
+        addRoundRect(RoundRect(rect, CornerRadius(radiusPx, radiusPx)))
+    }
+    val androidOutline = outline.asAndroidPath()
+    val pathMeasure = PathMeasure(androidOutline, true)
+    val totalLength = pathMeasure.length
+    if (totalLength <= 0f) return null
+
+    fun findOffsetFor(target: Offset): Float {
+        val pos = FloatArray(2)
+        val tan = FloatArray(2)
+        var bestDistance = Float.MAX_VALUE
+        var bestOffset = 0f
+        val steps = 256
+        for (i in 0..steps) {
+            val distance = totalLength * i / steps
+            if (pathMeasure.getPosTan(distance, pos, tan)) {
+                val dx = pos[0] - target.x
+                val dy = pos[1] - target.y
+                val candidate = dx * dx + dy * dy
+                if (candidate < bestDistance) {
+                    bestDistance = candidate
+                    bestOffset = distance
+                }
+            }
+        }
+        return bestOffset
+    }
+
+    val topRightAnchor = findOffsetFor(
+        Offset(
+            x = rect.right - radiusPx * 0.35f,
+            y = rect.top + radiusPx * 0.65f
+        )
+    )
+    val bottomCenterAnchor = findOffsetFor(
+        Offset(
+            x = rect.left + rect.width / 2f,
+            y = rect.bottom - radiusPx * 0.25f
+        )
+    )
+
+    val center = rect.center
+    val shader = SweepGradient(center.x, center.y, RainbowColorInts, RainbowBaseStops)
+
+    return BorderGeometry(
+        strokeWidthPx = strokeWidthPx,
+        radiusPx = radiusPx,
+        rect = rect,
+        outline = outline,
+        pathMeasure = pathMeasure,
+        totalLength = totalLength,
+        topRightAnchor = topRightAnchor,
+        bottomCenterAnchor = bottomCenterAnchor,
+        center = center,
+        shader = shader
+    )
+}
+
+private fun easeOutBack(value: Float, overshoot: Float): Float {
+    val clamped = value.coerceIn(0f, 1f)
+    val c1 = overshoot
+    val c3 = c1 + 1f
+    val t = clamped - 1f
+    return 1f + c3 * t * t * t + c1 * t * t
+}
+
+private fun shapedRevealFraction(style: RainbowAnimationStyle, fraction: Float): Float = when (style) {
+    RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> easeOutBack(fraction, overshoot = 1.45f)
+    RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> easeOutBack(fraction, overshoot = 1.3f)
+    else -> fraction.coerceIn(0f, 1f)
+}
+
+private fun forwardBias(style: RainbowAnimationStyle): Float = when (style) {
+    RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> 0.68f
+    RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> 0.62f
+    else -> 0.5f
+}
+
 @Composable
 fun AnimatedRainbowBorder(
     modifier: Modifier = Modifier,
     borderRadius: Float = 50f,
     borderWidth: Float = 12f,
     enabled: Boolean = true,
+    animationStyle: RainbowAnimationStyle = RainbowAnimationStyle.CONTINUOUS_SWEEP,
     content: @Composable () -> Unit
 ) {
     if (!enabled) {
-        content()
+        Box(modifier = modifier) { content() }
         return
     }
-    
-    // Debug logging
-    println("🌈 AnimatedRainbowBorder recomposing - radius: $borderRadius, width: $borderWidth")
 
-    // Infinite animation for rainbow rotation - OUTSIDE key() to maintain continuity
-    val infiniteTransition = rememberInfiniteTransition(label = "rainbow")
-    val animationProgress by infiniteTransition.animateFloat(
+    val revealStyleActive = animationStyle != RainbowAnimationStyle.CONTINUOUS_SWEEP
+    val revealAnim = remember(animationStyle) { Animatable(if (revealStyleActive) 0f else 1f) }
+    var revealComplete by remember(animationStyle) { mutableStateOf(!revealStyleActive) }
+    val latestEnabled by rememberUpdatedState(enabled)
+    val revealSpec: AnimationSpec<Float> = remember(animationStyle) {
+        when (animationStyle) {
+            RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> spring(
+                dampingRatio = 0.6f,
+                stiffness = Spring.StiffnessLow
+            )
+
+            RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> spring(
+                dampingRatio = 0.65f,
+                stiffness = Spring.StiffnessMediumLow
+            )
+
+            else -> tween(
+                durationMillis = 520,
+                easing = CubicBezierEasing(0.2f, 0f, 0.8f, 1f)
+            )
+        }
+    }
+
+    LaunchedEffect(animationStyle, latestEnabled) {
+        if (!latestEnabled) {
+            revealComplete = !revealStyleActive
+            revealAnim.snapTo(if (revealStyleActive) 0f else 1f)
+            return@LaunchedEffect
+        }
+
+        if (revealStyleActive) {
+            revealComplete = false
+            revealAnim.snapTo(0f)
+            revealAnim.animateTo(targetValue = 1f, animationSpec = revealSpec)
+            revealComplete = true
+        } else {
+            revealAnim.snapTo(1f)
+            revealComplete = true
+        }
+    }
+
+    var layoutSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
+    val densityKey = density.density to density.fontScale
+    val geometry = remember(layoutSize, borderWidth, borderRadius, densityKey) {
+        buildBorderGeometry(layoutSize, density, borderWidth, borderRadius)
+    }
+    val gradientPaint = remember { Paint() }
+    val gradientMatrix = remember { Matrix() }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "rainbow-border")
+    val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(4000, easing = LinearEasing),
+            animation = tween(durationMillis = 6000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "rainbow_rotation"
+        label = "rainbow-rotation"
     )
-    
-    // Pulsing glow animation for intensity
     val glowPulse by infiniteTransition.animateFloat(
-        initialValue = 0.7f,
-        targetValue = 1.0f,
+        initialValue = 0.75f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 2600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "glow_pulse"
-    )
-    
-    // Shadow spread animation
-    val shadowSpread by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shadow_spread"
+        label = "rainbow-glow"
     )
 
-    Box(modifier = modifier) {
-        // Content
+    val revealFractionRaw = if (revealStyleActive) revealAnim.value else 1f
+    val revealPhaseActive = revealStyleActive && !revealComplete
+    val revealFractionShaped = if (revealPhaseActive) {
+        shapedRevealFraction(animationStyle, revealFractionRaw).coerceIn(0f, 1.12f)
+    } else {
+        1f
+    }
+
+    Box(modifier = modifier.onSizeChanged { layoutSize = it }) {
         content()
 
-        // Border overlay with CSS-like filter effects
-        // Use Canvas for better invalidation and parameter tracking
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            println("🎨 Canvas drawing - radius: $borderRadius, width: $borderWidth, animProgress: $animationProgress")
-            
-            val width = size.width
-            val height = size.height
-            val strokeWidth = borderWidth.dp.toPx()
-            val radius = borderRadius.dp.toPx()
-            
-            // Capture animation values - IMPORTANT: These must be referenced here to trigger redraws
-            val animProgress = animationProgress
-            val pulse = glowPulse
-            val spread = shadowSpread
-            
-            println("✏️ Calculated - strokeWidth: $strokeWidth, radius: $radius")
-            
-            // Rainbow colors
-            val baseColors = listOf(
-                Color(0xFFFF0000), // Red
-                Color(0xFFFF7F00), // Orange
-                Color(0xFFFFFF00), // Yellow
-                Color(0xFF00FF00), // Green
-                Color(0xFF0000FF), // Blue
-                Color(0xFF4B0082), // Indigo
-                Color(0xFF9400D3), // Violet
-                Color(0xFFFF0000)  // Red again for smooth loop
-            )
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val geometryState = geometry ?: return@Canvas
+            val strokeWidthPx = geometryState.strokeWidthPx
+            val radiusPx = geometryState.radiusPx
+            val rect = geometryState.rect
+            val outline = geometryState.outline
+            val pathMeasure = geometryState.pathMeasure
+            val totalLength = geometryState.totalLength
+            val topRightAnchor = geometryState.topRightAnchor
+            val bottomCenterAnchor = geometryState.bottomCenterAnchor
 
-            // Calculate rotation angle in radians
-            val angleRad = animProgress * (PI / 180f).toFloat()
-            
-            // Create rotating gradient brush with smooth color interpolation
-            val centerX = width / 2
-            val centerY = height / 2
-            
-            // Generate colors for sweep gradient with rotation
-            val rotatedColors = mutableListOf<Color>()
-            val numStops = 8
-            for (i in 0 until numStops) {
-                val angle = (i.toFloat() / numStops * 360f + animProgress) % 360f
-                val colorIndex = (angle / 360f * baseColors.size).toInt() % baseColors.size
-                val nextIndex = (colorIndex + 1) % baseColors.size
-                val fraction = (angle / 360f * baseColors.size) % 1f
-                
-                // Interpolate between colors for smooth transition
-                val color = Color(
-                    red = baseColors[colorIndex].red * (1 - fraction) + baseColors[nextIndex].red * fraction,
-                    green = baseColors[colorIndex].green * (1 - fraction) + baseColors[nextIndex].green * fraction,
-                    blue = baseColors[colorIndex].blue * (1 - fraction) + baseColors[nextIndex].blue * fraction,
-                    alpha = 1f
-                )
-                rotatedColors.add(color)
+            fun appendSegment(target: AndroidPath, start: Float, end: Float) {
+                var segStart = start
+                var segEnd = end
+                var moveTo = target.isEmpty
+
+                while (segStart < 0f) {
+                    segStart += totalLength
+                    segEnd += totalLength
+                }
+                while (segStart >= totalLength) {
+                    segStart -= totalLength
+                    segEnd -= totalLength
+                }
+
+                if (segEnd <= segStart) return
+
+                if (segEnd <= totalLength) {
+                    pathMeasure.getSegment(segStart, segEnd, target, moveTo)
+                } else {
+                    pathMeasure.getSegment(segStart, totalLength, target, moveTo)
+                    moveTo = false
+                    pathMeasure.getSegment(0f, segEnd - totalLength, target, moveTo)
+                }
             }
-            rotatedColors.add(rotatedColors[0]) // Close the loop
-            
-            val brush = Brush.sweepGradient(
-                colors = rotatedColors,
-                center = Offset(centerX, centerY)
-            )
-            
-            // LAYER 1: Outer Shadow (CSS drop-shadow) - Optimized
-            // Simulates: filter: drop-shadow(0 0 20px rgba(rainbow, 0.6))
-            // ============================================
-            val shadowLayers = 3  // Further reduced for better performance
-            for (i in shadowLayers downTo 1) {
-                val shadowOffset = i * 4f * spread
-                val shadowAlpha = (0.12f / i) * pulse
-                val shadowStrokeWidth = strokeWidth + shadowOffset
-                
-                drawRoundRect(
-                    brush = brush,
-                    topLeft = Offset(
-                        shadowStrokeWidth / 2,
-                        shadowStrokeWidth / 2
-                    ),
-                    size = Size(
-                        width - shadowStrokeWidth,
-                        height - shadowStrokeWidth
-                    ),
-                    cornerRadius = CornerRadius(radius, radius),
+
+            val revealPath: Path? = if (revealPhaseActive) {
+                val fraction = revealFractionShaped
+                if (fraction <= 0f) {
+                    null
+                } else {
+                    val anchor = when (animationStyle) {
+                        RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> topRightAnchor
+                        RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> bottomCenterAnchor
+                        else -> topRightAnchor
+                    }
+                    val visibleLength = totalLength * fraction
+                    val forwardPortion = forwardBias(animationStyle).coerceIn(0.35f, 0.85f)
+                    val forwardVisible = visibleLength * forwardPortion
+                    val backwardVisible = visibleLength - forwardVisible
+                    val segmentPath = AndroidPath()
+                    appendSegment(segmentPath, anchor - backwardVisible, anchor)
+                    appendSegment(segmentPath, anchor, anchor + forwardVisible)
+                    if (segmentPath.isEmpty) null else segmentPath.asComposePath()
+                }
+            } else null
+
+            val activePath = revealPath ?: outline
+
+            val glowAlpha = 0.18f * glowPulse * if (revealPhaseActive) 0.7f else 1f
+            if (glowAlpha > 0f) {
+                drawPath(
+                    path = activePath,
+                    color = Color.White.copy(alpha = glowAlpha),
                     style = Stroke(
-                        width = shadowStrokeWidth / 2,
+                        width = strokeWidthPx + strokeWidthPx * 0.45f,
                         cap = StrokeCap.Round
-                    ),
-                    alpha = shadowAlpha,
-                    blendMode = BlendMode.Plus
+                    )
                 )
             }
 
-            // ============================================
-            // LAYER 2: Blur Effect (CSS blur) - Optimized
-            // Simulates: filter: blur(8px)
-            // ============================================
-            val blurLayers = 2  // Further reduced for better performance
-            for (i in blurLayers downTo 1) {
-                val blurOffset = i * 2.5f
-                val blurAlpha = (0.15f / i) * pulse
-                val blurStrokeWidth = strokeWidth + blurOffset
-                
-                drawRoundRect(
-                    brush = brush,
-                    topLeft = Offset(
-                        strokeWidth / 2,
-                        strokeWidth / 2
-                    ),
-                    size = Size(
-                        width - strokeWidth,
-                        height - strokeWidth
-                    ),
-                    cornerRadius = CornerRadius(radius, radius),
+            if (revealPhaseActive) {
+                val anchor = when (animationStyle) {
+                    RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> topRightAnchor
+                    RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> bottomCenterAnchor
+                    else -> null
+                }
+                val anchorPos = FloatArray(2)
+                if (anchor != null && pathMeasure.getPosTan(anchor, anchorPos, null)) {
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.22f * glowPulse),
+                        radius = strokeWidthPx * 1.35f * revealFractionShaped.coerceIn(0.6f, 1.1f),
+                        center = Offset(anchorPos[0], anchorPos[1])
+                    )
+                }
+            }
+
+            val sweepShader = geometryState.shader
+            gradientMatrix.reset()
+            gradientMatrix.postRotate(rotation, geometryState.center.x, geometryState.center.y)
+            sweepShader.setLocalMatrix(gradientMatrix)
+
+            drawIntoCanvas { canvas ->
+                val paint = gradientPaint
+                paint.style = PaintingStyle.Stroke
+                paint.strokeWidth = strokeWidthPx
+                paint.strokeCap = StrokeCap.Round
+                paint.asFrameworkPaint().apply {
+                    isAntiAlias = true
+                    setShader(sweepShader)
+                }
+                canvas.drawPath(activePath, paint)
+            }
+
+            val highlightAlpha = 0.08f * glowPulse * if (revealPhaseActive) 0.6f else 1f
+            if (highlightAlpha > 0f) {
+                drawPath(
+                    path = activePath,
+                    color = Color.White.copy(alpha = highlightAlpha),
                     style = Stroke(
-                        width = blurStrokeWidth,
+                        width = strokeWidthPx * 0.55f,
                         cap = StrokeCap.Round
-                    ),
-                    alpha = blurAlpha,
-                    blendMode = BlendMode.Plus
+                    )
                 )
             }
-
-            // ============================================
-            // LAYER 3: Main Border (Sharp, crisp edge)
-            // ============================================
-            drawRoundRect(
-                brush = brush,
-                topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-                size = Size(width - strokeWidth, height - strokeWidth),
-                cornerRadius = CornerRadius(radius, radius),
-                style = Stroke(
-                    width = strokeWidth,
-                    cap = StrokeCap.Round
-                ),
-                alpha = 1.0f
-            )
-            
-            // ============================================
-            // LAYER 4: Highlight Glow (Bright edge)
-            // Simulates: filter: brightness(1.2) saturate(1.3)
-            // ============================================
-            drawRoundRect(
-                brush = brush,
-                topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-                size = Size(width - strokeWidth, height - strokeWidth),
-                cornerRadius = CornerRadius(radius, radius),
-                style = Stroke(
-                    width = strokeWidth,
-                    cap = StrokeCap.Round
-                ),
-                alpha = 0.6f * pulse,
-                blendMode = BlendMode.Plus
-            )
         }
     }
 }

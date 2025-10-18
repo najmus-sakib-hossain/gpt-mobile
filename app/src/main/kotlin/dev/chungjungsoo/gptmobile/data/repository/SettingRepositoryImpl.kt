@@ -5,6 +5,7 @@ import dev.chungjungsoo.gptmobile.data.datastore.SettingDataSource
 import dev.chungjungsoo.gptmobile.data.dto.BorderSetting
 import dev.chungjungsoo.gptmobile.data.dto.Platform
 import dev.chungjungsoo.gptmobile.data.dto.ThemeSetting
+import dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle
 import dev.chungjungsoo.gptmobile.data.model.ApiType
 import dev.chungjungsoo.gptmobile.data.model.DynamicTheme
 import dev.chungjungsoo.gptmobile.data.model.ThemeMode
@@ -89,16 +90,18 @@ class SettingRepositoryImpl @Inject constructor(
         settingDataSource.updateThemeMode(themeSetting.themeMode)
     }
     
-    override suspend fun fetchBorderSettings(): dev.chungjungsoo.gptmobile.data.dto.BorderSetting = 
-        dev.chungjungsoo.gptmobile.data.dto.BorderSetting(
+    override suspend fun fetchBorderSettings(): BorderSetting =
+        BorderSetting(
             enabled = settingDataSource.getBorderEnabled() ?: true,
             borderRadius = settingDataSource.getBorderRadius() ?: 32f,
-            borderWidth = settingDataSource.getBorderWidth() ?: 4f
+            borderWidth = settingDataSource.getBorderWidth() ?: 4f,
+            animationStyle = RainbowAnimationStyle.fromStorage(settingDataSource.getBorderAnimationStyle())
         )
 
-    override suspend fun updateBorderSettings(borderSetting: dev.chungjungsoo.gptmobile.data.dto.BorderSetting) {
+    override suspend fun updateBorderSettings(borderSetting: BorderSetting) {
         settingDataSource.updateBorderEnabled(borderSetting.enabled)
         settingDataSource.updateBorderRadius(borderSetting.borderRadius)
         settingDataSource.updateBorderWidth(borderSetting.borderWidth)
+        settingDataSource.updateBorderAnimationStyle(borderSetting.animationStyle.storageValue)
     }
 }

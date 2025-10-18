@@ -28,7 +28,9 @@ interface SettingDataSource {
     suspend fun updateBorderEnabled(enabled: Boolean)
     suspend fun updateBorderRadius(radius: Float)
     suspend fun updateBorderWidth(width: Float)
+    suspend fun updateBorderAnimationStyle(style: String)
     suspend fun getBorderEnabled(): Boolean?
     suspend fun getBorderRadius(): Float?
     suspend fun getBorderWidth(): Float?
+    suspend fun getBorderAnimationStyle(): String?
 }

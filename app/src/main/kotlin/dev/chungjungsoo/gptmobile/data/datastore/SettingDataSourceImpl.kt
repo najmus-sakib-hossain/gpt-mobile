@@ -80,6 +80,7 @@ class SettingDataSourceImpl @Inject constructor(
     private val borderEnabledKey = booleanPreferencesKey("border_enabled")
     private val borderRadiusKey = floatPreferencesKey("border_radius")
     private val borderWidthKey = floatPreferencesKey("border_width")
+    private val borderAnimationStyleKey = stringPreferencesKey("border_animation_style")
 
     override suspend fun updateDynamicTheme(theme: DynamicTheme) {
         dataStore.edit { pref ->
@@ -198,6 +199,12 @@ class SettingDataSourceImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateBorderAnimationStyle(style: String) {
+        dataStore.edit { pref ->
+            pref[borderAnimationStyleKey] = style
+        }
+    }
+
     override suspend fun getBorderEnabled(): Boolean? = dataStore.data.map { pref ->
         pref[borderEnabledKey]
     }.first()
@@ -208,5 +215,9 @@ class SettingDataSourceImpl @Inject constructor(
 
     override suspend fun getBorderWidth(): Float? = dataStore.data.map { pref ->
         pref[borderWidthKey]
+    }.first()
+
+    override suspend fun getBorderAnimationStyle(): String? = dataStore.data.map { pref ->
+        pref[borderAnimationStyleKey]
     }.first()
 }

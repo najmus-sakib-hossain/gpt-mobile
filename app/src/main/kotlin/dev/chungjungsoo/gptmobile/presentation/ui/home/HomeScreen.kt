@@ -334,6 +334,7 @@ fun HomeScreen(
             onEnabledChange = homeViewModel::updateBorderEnabled,
             onRadiusChange = homeViewModel::updateBorderRadius,
             onWidthChange = homeViewModel::updateBorderWidth,
+            onAnimationStyleChange = homeViewModel::updateBorderAnimationStyle,
             onSave = {
                 homeViewModel.saveBorderSettings()
                 homeViewModel.closeBorderSettingsDialog()
@@ -367,6 +368,7 @@ fun HomeContent(
                 onEnabledChange = homeViewModel::updateBorderEnabled,
                 onRadiusChange = homeViewModel::updateBorderRadius,
                 onWidthChange = homeViewModel::updateBorderWidth,
+                onAnimationStyleChange = homeViewModel::updateBorderAnimationStyle,
                 onSave = homeViewModel::saveBorderSettings
             )
         }
@@ -425,6 +427,7 @@ fun BorderSettingsCard(
     onEnabledChange: (Boolean) -> Unit,
     onRadiusChange: (Float) -> Unit,
     onWidthChange: (Float) -> Unit,
+    onAnimationStyleChange: (dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle) -> Unit,
     onSave: () -> Unit
 ) {
     Card(
@@ -516,6 +519,87 @@ fun BorderSettingsCard(
                     inactiveTrackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
                 )
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Animation Style",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val animationOptions = listOf(
+                dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.CONTINUOUS_SWEEP to Pair(
+                    "Continuous Orbit",
+                    "Classic rainbow sweep circling every edge."
+                ),
+                dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.TOP_RIGHT_BOUNCE to Pair(
+                    "Volume Button Bounce",
+                    "Glow launches from the upper-right, bouncing like a volume press."
+                ),
+                dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.BOTTOM_CENTER_REVEAL to Pair(
+                    "Bottom Lift Reveal",
+                    "Border rises from the bottom center and wraps the screen."
+                )
+            )
+
+            animationOptions.forEach { (style, info) ->
+                val selected = borderSettings.animationStyle == style
+                val optionModifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .then(
+                        if (borderSettings.enabled) {
+                            Modifier.clickable {
+                                onAnimationStyleChange(style)
+                                onSave()
+                            }
+                        } else {
+                            Modifier
+                        }
+                    )
+
+                androidx.compose.material3.Surface(
+                    modifier = optionModifier,
+                    shape = MaterialTheme.shapes.medium,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                    } else {
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.05f)
+                    },
+                    tonalElevation = if (selected) 4.dp else 0.dp,
+                    shadowElevation = if (selected) 2.dp else 0.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.RadioButton(
+                            selected = selected,
+                            onClick = null,
+                            enabled = borderSettings.enabled
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = info.first,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = info.second,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -1166,12 +1250,14 @@ fun BorderSettingsDialog(
     onEnabledChange: (Boolean) -> Unit,
     onRadiusChange: (Float) -> Unit,
     onWidthChange: (Float) -> Unit,
+    onAnimationStyleChange: (dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle) -> Unit,
     onSave: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
     var enabled by remember { mutableStateOf(borderSettings.enabled) }
     var borderRadius by remember { mutableStateOf(borderSettings.borderRadius) }
     var borderWidth by remember { mutableStateOf(borderSettings.borderWidth) }
+    var animationStyle by remember { mutableStateOf(borderSettings.animationStyle) }
 
     AlertDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -1245,6 +1331,84 @@ fun BorderSettingsDialog(
                     enabled = enabled,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Animation Style",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                val animationOptions = listOf(
+                    dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.CONTINUOUS_SWEEP to Pair(
+                        "Continuous Orbit",
+                        "Classic rainbow sweep circling every edge."
+                    ),
+                    dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.TOP_RIGHT_BOUNCE to Pair(
+                        "Volume Button Bounce",
+                        "Glow launches from the upper-right, bouncing like a volume press."
+                    ),
+                    dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.BOTTOM_CENTER_REVEAL to Pair(
+                        "Bottom Lift Reveal",
+                        "Border rises from the bottom center and wraps the screen."
+                    )
+                )
+
+                animationOptions.forEach { (style, info) ->
+                    val selected = animationStyle == style
+                    val optionModifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .then(
+                            if (enabled) {
+                                Modifier.clickable {
+                                    animationStyle = style
+                                    onAnimationStyleChange(style)
+                                }
+                            } else {
+                                Modifier
+                            }
+                        )
+
+                    androidx.compose.material3.Surface(
+                        modifier = optionModifier,
+                        shape = MaterialTheme.shapes.medium,
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                        },
+                        tonalElevation = if (selected) 6.dp else 0.dp,
+                        shadowElevation = if (selected) 3.dp else 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            androidx.compose.material3.RadioButton(
+                                selected = selected,
+                                onClick = null,
+                                enabled = enabled
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = info.first,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                                )
+                                Text(
+                                    text = info.second,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
 
                 // Preview info
                 Text(

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -203,6 +204,10 @@ class HomeViewModel @Inject constructor(
 
     fun updateBorderWidth(width: Float) {
         _borderSettings.update { it.copy(borderWidth = width) }
+    }
+
+    fun updateBorderAnimationStyle(style: RainbowAnimationStyle) {
+        _borderSettings.update { it.copy(animationStyle = style) }
     }
 
     fun saveBorderSettings() {

@@ -71,7 +71,8 @@ fun SetupNavGraph(navController: NavHostController) {
         modifier = Modifier.fillMaxSize(),
         borderRadius = borderSettings.borderRadius,
         borderWidth = borderSettings.borderWidth,
-        enabled = borderSettings.enabled
+        enabled = borderSettings.enabled,
+        animationStyle = borderSettings.animationStyle
     ) {
         ModalNavigationDrawer(
             drawerState = drawerState,
