@@ -364,11 +364,6 @@ fun HomeContent(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Generation Rainbow Glow Showcase
-        item {
-            GenerationRainbowGlowSection()
-        }
-
 
         // Border Settings Section - Top Priority
         item {
@@ -380,6 +375,11 @@ fun HomeContent(
                 onAnimationStyleChange = homeViewModel::updateBorderAnimationStyle,
                 onSave = homeViewModel::saveBorderSettings
             )
+        }
+
+        // Generation Rainbow Glow Showcase
+        item {
+            GenerationRainbowGlowSection()
         }
 
         // Offline AI Section
@@ -545,13 +545,29 @@ fun BorderSettingsCard(
                     "Continuous Orbit",
                     "Classic rainbow sweep circling every edge."
                 ),
+                dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.TOP_CENTER_REVEAL to Pair(
+                    "Top Center Reveal",
+                    "Rainbow reveals from top center spreading left and right."
+                ),
                 dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.TOP_RIGHT_BOUNCE to Pair(
-                    "Volume Button Bounce",
-                    "Glow launches from the upper-right, bouncing like a volume press."
+                    "Top Right Bounce",
+                    "Glow launches from the upper-right with bounce effect."
                 ),
                 dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.BOTTOM_CENTER_REVEAL to Pair(
-                    "Bottom Lift Reveal",
-                    "Border rises from the bottom center and wraps the screen."
+                    "Bottom Center Reveal",
+                    "Border rises from the bottom center and wraps around."
+                ),
+                dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.LEFT_CENTER_REVEAL to Pair(
+                    "Left Center Reveal",
+                    "Rainbow spreads from left center going up and down."
+                ),
+                dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.RIGHT_CENTER_REVEAL to Pair(
+                    "Right Center Reveal",
+                    "Rainbow spreads from right center going up and down."
+                ),
+                dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.CENTER_EXPAND to Pair(
+                    "Center Expand",
+                    "Rainbow expands from center to all edges simultaneously."
                 )
             )
 
@@ -1679,13 +1695,29 @@ fun BorderSettingsDialog(
                         "Continuous Orbit",
                         "Classic rainbow sweep circling every edge."
                     ),
+                    dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.TOP_CENTER_REVEAL to Pair(
+                        "Top Center Reveal",
+                        "Rainbow reveals from top center spreading left and right."
+                    ),
                     dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.TOP_RIGHT_BOUNCE to Pair(
-                        "Volume Button Bounce",
-                        "Glow launches from the upper-right, bouncing like a volume press."
+                        "Top Right Bounce",
+                        "Glow launches from the upper-right with bounce effect."
                     ),
                     dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.BOTTOM_CENTER_REVEAL to Pair(
-                        "Bottom Lift Reveal",
-                        "Border rises from the bottom center and wraps the screen."
+                        "Bottom Center Reveal",
+                        "Border rises from the bottom center and wraps around."
+                    ),
+                    dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.LEFT_CENTER_REVEAL to Pair(
+                        "Left Center Reveal",
+                        "Rainbow spreads from left center going up and down."
+                    ),
+                    dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.RIGHT_CENTER_REVEAL to Pair(
+                        "Right Center Reveal",
+                        "Rainbow spreads from right center going up and down."
+                    ),
+                    dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle.CENTER_EXPAND to Pair(
+                        "Center Expand",
+                        "Rainbow expands from center to all edges simultaneously."
                     )
                 )
 

@@ -17,6 +17,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,7 +71,7 @@ private val RainbowColorInts: IntArray = IntArray(RainbowColors.size) { index ->
 
 private val SmoothRevealEasing = CubicBezierEasing(0.38f, 0f, 0.22f, 1f)
 
-private fun easeOutBack(value: Float, overshoot: Float): Float {
+private fun easeOutBack(value: Float, overshoot: Float = 1.06f): Float {
     val clamped = value.coerceIn(0f, 1f)
     val c1 = overshoot
     val c3 = c1 + 1f
@@ -84,8 +86,11 @@ private data class BorderGeometry(
     val outline: Path,
     val pathMeasure: PathMeasure,
     val totalLength: Float,
+    val topCenterAnchor: Float,
     val topRightAnchor: Float,
     val bottomCenterAnchor: Float,
+    val leftCenterAnchor: Float,
+    val rightCenterAnchor: Float,
     val center: Offset,
     val shader: SweepGradient
 )
@@ -140,6 +145,12 @@ private fun buildBorderGeometry(
         return bestOffset
     }
 
+    val topCenterAnchor = findOffsetFor(
+        Offset(
+            x = rect.left + rect.width / 2f,
+            y = rect.top + radiusPx * 0.25f
+        )
+    )
     val topRightAnchor = findOffsetFor(
         Offset(
             x = rect.right - radiusPx * 0.35f,
@@ -150,6 +161,18 @@ private fun buildBorderGeometry(
         Offset(
             x = rect.left + rect.width / 2f,
             y = rect.bottom - radiusPx * 0.25f
+        )
+    )
+    val leftCenterAnchor = findOffsetFor(
+        Offset(
+            x = rect.left + radiusPx * 0.25f,
+            y = rect.top + rect.height / 2f
+        )
+    )
+    val rightCenterAnchor = findOffsetFor(
+        Offset(
+            x = rect.right - radiusPx * 0.25f,
+            y = rect.top + rect.height / 2f
         )
     )
 
@@ -163,34 +186,51 @@ private fun buildBorderGeometry(
         outline = outline,
         pathMeasure = pathMeasure,
         totalLength = totalLength,
+        topCenterAnchor = topCenterAnchor,
         topRightAnchor = topRightAnchor,
         bottomCenterAnchor = bottomCenterAnchor,
+        leftCenterAnchor = leftCenterAnchor,
+        rightCenterAnchor = rightCenterAnchor,
         center = center,
         shader = shader
     )
 }
 
 private fun shapedRevealFraction(style: RainbowAnimationStyle, fraction: Float): Float = when (style) {
+    RainbowAnimationStyle.TOP_CENTER_REVEAL -> SmoothRevealEasing.transform(fraction.coerceIn(0f, 1f))
     RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> SmoothRevealEasing.transform(fraction.coerceIn(0f, 1f))
     RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> easeOutBack(fraction, overshoot = 1.06f)
+    RainbowAnimationStyle.LEFT_CENTER_REVEAL -> SmoothRevealEasing.transform(fraction.coerceIn(0f, 1f))
+    RainbowAnimationStyle.RIGHT_CENTER_REVEAL -> SmoothRevealEasing.transform(fraction.coerceIn(0f, 1f))
+    RainbowAnimationStyle.CENTER_EXPAND -> easeOutBack(fraction, overshoot = 1.08f)
     else -> fraction.coerceIn(0f, 1f)
 }
 
 private fun forwardBias(style: RainbowAnimationStyle): Float = when (style) {
+    RainbowAnimationStyle.TOP_CENTER_REVEAL -> 0.5f
     RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> 0.55f
     RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> 0.57f
+    RainbowAnimationStyle.LEFT_CENTER_REVEAL -> 0.5f
+    RainbowAnimationStyle.RIGHT_CENTER_REVEAL -> 0.5f
+    RainbowAnimationStyle.CENTER_EXPAND -> 0.5f
     else -> 0.5f
 }
 
 @Composable
 fun AnimatedRainbowBorder(
     modifier: Modifier = Modifier,
-    borderRadius: Float = 50f,
+    borderRadius: Float? = null, // null = use device corners
     borderWidth: Float = 12f,
     enabled: Boolean = true,
     animationStyle: RainbowAnimationStyle = RainbowAnimationStyle.CONTINUOUS_SWEEP,
     content: @Composable () -> Unit
 ) {
+    // Use device corner radius if not specified
+    val deviceCornerRadius = MaterialTheme.shapes.extraLarge.topStart
+    val effectiveBorderRadius = borderRadius ?: with(LocalDensity.current) { 
+        deviceCornerRadius.toPx(shapeSize = Size.Unspecified, density = this)
+    }
+    
     if (!enabled) {
         Box(modifier = modifier) { content() }
         return
@@ -202,16 +242,30 @@ fun AnimatedRainbowBorder(
     val latestEnabled by rememberUpdatedState(enabled)
     val revealSpec: AnimationSpec<Float> = remember(animationStyle) {
         when (animationStyle) {
+            RainbowAnimationStyle.TOP_CENTER_REVEAL -> tween(
+                durationMillis = 1500,
+                easing = SmoothRevealEasing
+            )
             RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> tween(
                 durationMillis = 1500,
                 easing = SmoothRevealEasing
             )
-
             RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> tween(
                 durationMillis = 2500,
                 easing = SmoothRevealEasing
             )
-
+            RainbowAnimationStyle.LEFT_CENTER_REVEAL -> tween(
+                durationMillis = 1500,
+                easing = SmoothRevealEasing
+            )
+            RainbowAnimationStyle.RIGHT_CENTER_REVEAL -> tween(
+                durationMillis = 1500,
+                easing = SmoothRevealEasing
+            )
+            RainbowAnimationStyle.CENTER_EXPAND -> tween(
+                durationMillis = 2000,
+                easing = SmoothRevealEasing
+            )
             else -> tween(
                 durationMillis = 520,
                 easing = CubicBezierEasing(0.2f, 0f, 0.8f, 1f)
@@ -240,8 +294,8 @@ fun AnimatedRainbowBorder(
     var layoutSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
     val densityKey = density.density to density.fontScale
-    val geometry = remember(layoutSize, borderWidth, borderRadius, densityKey) {
-        buildBorderGeometry(layoutSize, density, borderWidth, borderRadius)
+    val geometry = remember(layoutSize, borderWidth, effectiveBorderRadius, densityKey) {
+        buildBorderGeometry(layoutSize, density, borderWidth, effectiveBorderRadius)
     }
     val gradientPaint = remember { Paint() }
     val gradientMatrix = remember { Matrix() }
@@ -285,8 +339,11 @@ fun AnimatedRainbowBorder(
             val outline = geometryState.outline
             val pathMeasure = geometryState.pathMeasure
             val totalLength = geometryState.totalLength
+            val topCenterAnchor = geometryState.topCenterAnchor
             val topRightAnchor = geometryState.topRightAnchor
             val bottomCenterAnchor = geometryState.bottomCenterAnchor
+            val leftCenterAnchor = geometryState.leftCenterAnchor
+            val rightCenterAnchor = geometryState.rightCenterAnchor
 
             fun appendSegment(target: AndroidPath, start: Float, end: Float) {
                 var segStart = start
@@ -319,11 +376,22 @@ fun AnimatedRainbowBorder(
                     null
                 } else {
                     val anchor = when (animationStyle) {
+                        RainbowAnimationStyle.TOP_CENTER_REVEAL -> topCenterAnchor
                         RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> topRightAnchor
                         RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> bottomCenterAnchor
-                        else -> topRightAnchor
+                        RainbowAnimationStyle.LEFT_CENTER_REVEAL -> leftCenterAnchor
+                        RainbowAnimationStyle.RIGHT_CENTER_REVEAL -> rightCenterAnchor
+                        RainbowAnimationStyle.CENTER_EXPAND -> topCenterAnchor // Start from any point for expand
+                        else -> topCenterAnchor
                     }
-                    val visibleLength = totalLength * fraction
+                    
+                    // For CENTER_EXPAND, show full border progressively
+                    val visibleLength = if (animationStyle == RainbowAnimationStyle.CENTER_EXPAND) {
+                        totalLength * fraction
+                    } else {
+                        totalLength * fraction
+                    }
+                    
                     val forwardPortion = forwardBias(animationStyle).coerceIn(0.35f, 0.85f)
                     val forwardVisible = visibleLength * forwardPortion
                     val backwardVisible = visibleLength - forwardVisible
@@ -350,8 +418,12 @@ fun AnimatedRainbowBorder(
 
             if (revealPhaseActive) {
                 val anchor = when (animationStyle) {
+                    RainbowAnimationStyle.TOP_CENTER_REVEAL -> topCenterAnchor
                     RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> topRightAnchor
                     RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> bottomCenterAnchor
+                    RainbowAnimationStyle.LEFT_CENTER_REVEAL -> leftCenterAnchor
+                    RainbowAnimationStyle.RIGHT_CENTER_REVEAL -> rightCenterAnchor
+                    RainbowAnimationStyle.CENTER_EXPAND -> topCenterAnchor
                     else -> null
                 }
                 val anchorPos = FloatArray(2)
