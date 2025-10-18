@@ -646,41 +646,218 @@ fun BorderSettingsCard(
 
 @Composable
 fun GenerationRainbowGlowSection() {
+    var colorSteps by remember { mutableIntStateOf(60) }
+    var cycleMultiplier by remember { mutableStateOf(3f) }
+    var saturation by remember { mutableStateOf(0.80f) }
+    var rotationDuration by remember { mutableIntStateOf(5000) }
+    var shimmerDuration by remember { mutableIntStateOf(3000) }
+    var cornerRadius by remember { mutableStateOf(28f) }
+    
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
         Text(
-            text = "Generation Rainbow Glow",
+            text = "Generation Rainbow Glow Customizer",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
         )
+        
+        // Preview
         GeneratingSkeleton(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp),
-            contentPadding = 24.dp
+            cornerRadius = cornerRadius.dp,
+            rotationDurationMillis = rotationDuration,
+            shimmerDurationMillis = shimmerDuration,
+            contentPadding = 24.dp,
+            colorSteps = colorSteps,
+            cycleMultiplier = cycleMultiplier,
+            saturation = saturation
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Generating...",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                Icon(
+                    imageVector = Icons.Default.Autorenew,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Rainbow glow animation preview for loading states.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                    textAlign = TextAlign.Center
+                    text = "Generating...",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
                 )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Controls Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Color Steps
+                Text(
+                    text = "Color Steps: $colorSteps",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                androidx.compose.material3.Slider(
+                    value = colorSteps.toFloat(),
+                    onValueChange = { colorSteps = it.toInt() },
+                    valueRange = 12f..120f,
+                    steps = 107,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                Text(
+                    text = "Higher = smoother colors (60-120 recommended)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Cycle Multiplier
+                Text(
+                    text = "Cycle Width: ${String.format("%.1f", cycleMultiplier)}x",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                androidx.compose.material3.Slider(
+                    value = cycleMultiplier,
+                    onValueChange = { cycleMultiplier = it },
+                    valueRange = 1f..5f,
+                    steps = 39,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                Text(
+                    text = "Higher = smoother blending (3-4x recommended)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Saturation
+                Text(
+                    text = "Saturation: ${String.format("%.2f", saturation)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                androidx.compose.material3.Slider(
+                    value = saturation,
+                    onValueChange = { saturation = it },
+                    valueRange = 0.5f..1f,
+                    steps = 49,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                Text(
+                    text = "Lower = softer colors, higher = vibrant",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Rotation Duration
+                Text(
+                    text = "Animation Speed: ${rotationDuration}ms",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                androidx.compose.material3.Slider(
+                    value = rotationDuration.toFloat(),
+                    onValueChange = { rotationDuration = it.toInt() },
+                    valueRange = 2000f..10000f,
+                    steps = 79,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                Text(
+                    text = "Lower = faster animation",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Shimmer Duration
+                Text(
+                    text = "Shimmer Speed: ${shimmerDuration}ms",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                androidx.compose.material3.Slider(
+                    value = shimmerDuration.toFloat(),
+                    onValueChange = { shimmerDuration = it.toInt() },
+                    valueRange = 1000f..6000f,
+                    steps = 49,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                Text(
+                    text = "Lower = faster shimmer effect",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Corner Radius
+                Text(
+                    text = "Corner Radius: ${cornerRadius.toInt()}dp",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                androidx.compose.material3.Slider(
+                    value = cornerRadius,
+                    onValueChange = { cornerRadius = it },
+                    valueRange = 0f..48f,
+                    steps = 47,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Code Output
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Current Values (copy to code):",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = """
+                                |Color Steps: $colorSteps
+                                |Cycle Width: ${String.format("%.1f", cycleMultiplier)}x
+                                |Saturation: ${String.format("%.2f", saturation)}
+                                |Animation: ${rotationDuration}ms
+                                |Shimmer: ${shimmerDuration}ms
+                                |Corner Radius: ${cornerRadius.toInt()}dp
+                            """.trimMargin(),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
         }
     }

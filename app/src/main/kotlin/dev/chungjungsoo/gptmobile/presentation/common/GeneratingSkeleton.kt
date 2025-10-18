@@ -24,12 +24,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 
-// Ultra-smooth rainbow palette with many color stops to eliminate banding
-private val RainbowGlowColors: List<Color> = buildList {
-    val steps = 60 // much higher for completely seamless transitions
+// Dynamic rainbow palette builder
+private fun buildRainbowGlowColors(steps: Int, saturation: Float): List<Color> = buildList {
     for (i in 0..steps) { // include last == first to ensure seamless tiling
         val hue = i * (360f / steps)
-        add(colorFromHsv(hue, s = 0.80f, v = 1f))
+        add(colorFromHsv(hue, s = saturation, v = 1f))
     }
 }
 
@@ -57,6 +56,9 @@ fun GeneratingSkeleton(
     rotationDurationMillis: Int = 5000, // faster animation
     shimmerDurationMillis: Int = 3000, // faster shimmer
     contentPadding: Dp = 16.dp,
+    colorSteps: Int = 60, // customizable color steps
+    cycleMultiplier: Float = 3f, // customizable cycle width
+    saturation: Float = 0.80f, // customizable saturation
     content: @Composable BoxScope.() -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "generating-skeleton-transition")
@@ -87,7 +89,10 @@ fun GeneratingSkeleton(
             .drawRainbowGlow(
                 cornerRadius = cornerRadius,
                 colorShiftFraction = colorShiftFraction,
-                shimmerFraction = shimmerFraction
+                shimmerFraction = shimmerFraction,
+                colorSteps = colorSteps,
+                cycleMultiplier = cycleMultiplier,
+                saturation = saturation
             )
     ) {
         Box(
@@ -103,13 +108,19 @@ fun GeneratingSkeleton(
 private fun Modifier.drawRainbowGlow(
     cornerRadius: Dp,
     colorShiftFraction: Float,
-    shimmerFraction: Float
+    shimmerFraction: Float,
+    colorSteps: Int,
+    cycleMultiplier: Float,
+    saturation: Float
 ): Modifier = this.then(
     Modifier.drawBehind {
         val radiusPx = cornerRadius.toPx()
 
+        // Build dynamic rainbow colors based on parameters
+        val rainbowColors = buildRainbowGlowColors(colorSteps, saturation)
+
         // Wider cycle for ultra-smooth color blending
-        val cycleWidth = size.width.coerceAtLeast(1f) * 3f
+        val cycleWidth = size.width.coerceAtLeast(1f) * cycleMultiplier
 
         // Move left to right: phase increases positively
         val phase = colorShiftFraction * cycleWidth
@@ -119,7 +130,7 @@ private fun Modifier.drawRainbowGlow(
         // Ultra-smooth rainbow with seamless wrapping and many color stops
         drawRoundRect(
             brush = Brush.horizontalGradient(
-                colors = RainbowGlowColors,
+                colors = rainbowColors,
                 startX = startX,
                 endX = endX,
                 tileMode = TileMode.Repeated
