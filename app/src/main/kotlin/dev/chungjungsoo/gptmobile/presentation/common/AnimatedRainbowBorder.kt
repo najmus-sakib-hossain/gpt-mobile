@@ -203,12 +203,12 @@ fun AnimatedRainbowBorder(
     val revealSpec: AnimationSpec<Float> = remember(animationStyle) {
         when (animationStyle) {
             RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> tween(
-                durationMillis = 5000,
+                durationMillis = 1500,
                 easing = SmoothRevealEasing
             )
 
             RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> tween(
-                durationMillis = 5000,
+                durationMillis = 2500,
                 easing = SmoothRevealEasing
             )
 
