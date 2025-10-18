@@ -251,7 +251,7 @@ fun AnimatedRainbowBorder(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 6000, easing = LinearEasing),
+            animation = tween(durationMillis = 3500, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "rainbow-rotation"
