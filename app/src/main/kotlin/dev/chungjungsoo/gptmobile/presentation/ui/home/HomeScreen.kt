@@ -34,7 +34,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
@@ -96,6 +96,7 @@ import dev.chungjungsoo.gptmobile.data.database.entity.ChatRoom
 import dev.chungjungsoo.gptmobile.data.dto.Platform
 import dev.chungjungsoo.gptmobile.data.dto.exampleModelsList
 import dev.chungjungsoo.gptmobile.data.model.ApiType
+import dev.chungjungsoo.gptmobile.presentation.common.GeneratingSkeleton
 import dev.chungjungsoo.gptmobile.presentation.common.PlatformCheckBoxItem
 import dev.chungjungsoo.gptmobile.presentation.icons.SolarIcons
 import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.OfflineModelViewModel
@@ -361,6 +362,12 @@ fun HomeContent(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Generation Rainbow Glow Showcase
+        item {
+            GenerationRainbowGlowSection()
+        }
+
+
         // Border Settings Section - Top Priority
         item {
             BorderSettingsCard(
@@ -638,6 +645,48 @@ fun BorderSettingsCard(
 }
 
 @Composable
+fun GenerationRainbowGlowSection() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Text(
+            text = "Generation Rainbow Glow",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        GeneratingSkeleton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp),
+            contentPadding = 24.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Generating...",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Rainbow glow animation preview for loading states.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun OfflineAISection(
     downloadedModels: List<dev.chungjungsoo.gptmobile.data.database.entity.OfflineModel>,
     onBrowseModelsClick: () -> Unit,
@@ -749,7 +798,7 @@ fun OfflineAISection(
                     Text("Download More Models")
                     Spacer(modifier = Modifier.weight(1f))
                     Icon(
-                        Icons.Default.ArrowForward,
+                        Icons.Default.Autorenew,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
