@@ -70,10 +70,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -646,12 +648,16 @@ fun BorderSettingsCard(
 
 @Composable
 fun GenerationRainbowGlowSection() {
+    val context = LocalContext.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    
     var colorSteps by remember { mutableIntStateOf(60) }
     var cycleMultiplier by remember { mutableStateOf(3f) }
     var saturation by remember { mutableStateOf(0.80f) }
     var rotationDuration by remember { mutableIntStateOf(5000) }
     var shimmerDuration by remember { mutableIntStateOf(3000) }
     var cornerRadius by remember { mutableStateOf(28f) }
+    var animationStyle by remember { mutableStateOf(dev.chungjungsoo.gptmobile.data.dto.GlowAnimationStyle.CONTINUOUS_FLOW) }
     
     Column(
         modifier = Modifier
@@ -676,7 +682,8 @@ fun GenerationRainbowGlowSection() {
             contentPadding = 24.dp,
             colorSteps = colorSteps,
             cycleMultiplier = cycleMultiplier,
-            saturation = saturation
+            saturation = saturation,
+            animationStyle = animationStyle
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -708,6 +715,74 @@ fun GenerationRainbowGlowSection() {
             )
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
+                // Animation Style Selector - FIRST
+                Text(
+                    text = "Animation Style",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                val animationOptions = dev.chungjungsoo.gptmobile.data.dto.GlowAnimationStyle.values()
+                
+                animationOptions.forEach { style ->
+                    val selected = animationStyle == style
+                    val optionModifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { animationStyle = style }
+                    
+                    androidx.compose.material3.Surface(
+                        modifier = optionModifier,
+                        color = if (selected) 
+                            MaterialTheme.colorScheme.primaryContainer 
+                        else 
+                            MaterialTheme.colorScheme.surface,
+                        tonalElevation = if (selected) 4.dp else 1.dp,
+                        shadowElevation = if (selected) 2.dp else 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            androidx.compose.material3.RadioButton(
+                                selected = selected,
+                                onClick = { animationStyle = style },
+                                colors = androidx.compose.material3.RadioButtonDefaults.colors(
+                                    selectedColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = style.displayName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (selected) 
+                                        MaterialTheme.colorScheme.onPrimaryContainer 
+                                    else 
+                                        MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = style.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (selected) 
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    else 
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 // Color Steps
                 Text(
                     text = "Color Steps: $colorSteps",
@@ -829,19 +904,50 @@ fun GenerationRainbowGlowSection() {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Code Output
+                // Code Output with Copy Button
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "Current Values (copy to code):",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Current Values:",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            FilledTonalButton(
+                                onClick = {
+                                    val codeText = """
+                                        colorSteps = $colorSteps,
+                                        cycleMultiplier = ${String.format("%.1f", cycleMultiplier)}f,
+                                        saturation = ${String.format("%.2f", saturation)}f,
+                                        rotationDurationMillis = $rotationDuration,
+                                        shimmerDurationMillis = $shimmerDuration,
+                                        cornerRadius = ${cornerRadius.toInt()}.dp,
+                                        animationStyle = GlowAnimationStyle.${animationStyle.name}
+                                    """.trimIndent()
+                                    
+                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(codeText))
+                                    Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
+                                },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_copy_bold),
+                                    contentDescription = "Copy",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = "Copy", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = """
@@ -851,6 +957,7 @@ fun GenerationRainbowGlowSection() {
                                 |Animation: ${rotationDuration}ms
                                 |Shimmer: ${shimmerDuration}ms
                                 |Corner Radius: ${cornerRadius.toInt()}dp
+                                |Style: ${animationStyle.displayName}
                             """.trimMargin(),
                             style = MaterialTheme.typography.bodySmall,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
