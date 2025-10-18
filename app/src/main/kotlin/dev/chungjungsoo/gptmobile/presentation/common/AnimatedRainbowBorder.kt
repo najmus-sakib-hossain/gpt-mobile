@@ -10,7 +10,6 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -162,23 +161,15 @@ private fun buildBorderGeometry(
     )
 }
 
-private fun easeOutBack(value: Float, overshoot: Float): Float {
-    val clamped = value.coerceIn(0f, 1f)
-    val c1 = overshoot
-    val c3 = c1 + 1f
-    val t = clamped - 1f
-    return 1f + c3 * t * t * t + c1 * t * t
-}
-
 private fun shapedRevealFraction(style: RainbowAnimationStyle, fraction: Float): Float = when (style) {
-    RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> easeOutBack(fraction, overshoot = 1.45f)
-    RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> easeOutBack(fraction, overshoot = 1.3f)
+    RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> FastOutSlowInEasing.transform(fraction.coerceIn(0f, 1f))
+    RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> FastOutSlowInEasing.transform(fraction.coerceIn(0f, 1f))
     else -> fraction.coerceIn(0f, 1f)
 }
 
 private fun forwardBias(style: RainbowAnimationStyle): Float = when (style) {
-    RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> 0.68f
-    RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> 0.62f
+    RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> 0.6f
+    RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> 0.58f
     else -> 0.5f
 }
 
@@ -202,14 +193,14 @@ fun AnimatedRainbowBorder(
     val latestEnabled by rememberUpdatedState(enabled)
     val revealSpec: AnimationSpec<Float> = remember(animationStyle) {
         when (animationStyle) {
-            RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> spring(
-                dampingRatio = 0.6f,
-                stiffness = Spring.StiffnessLow
+            RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> tween(
+                durationMillis = 5000,
+                easing = FastOutSlowInEasing
             )
 
-            RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> spring(
-                dampingRatio = 0.65f,
-                stiffness = Spring.StiffnessMediumLow
+            RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> tween(
+                durationMillis = 5000,
+                easing = FastOutSlowInEasing
             )
 
             else -> tween(
