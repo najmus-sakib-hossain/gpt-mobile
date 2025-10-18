@@ -48,6 +48,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle
+// Prefer external ShadowGlow when available. If Gradle fails or offline, use local fallback.
+// External (preferred): import me.trishiraj.shadowglow.shadowGlow
+import dev.chungjungsoo.gptmobile.presentation.common.fallback.shadowGlow
 
 private val RainbowColors: List<Color> = listOf(
     Color(0xFFFF0000),
@@ -328,7 +331,27 @@ fun AnimatedRainbowBorder(
         1f
     }
 
-    Box(modifier = modifier.onSizeChanged { layoutSize = it }) {
+    // Create enhanced rainbow gradient colors for the glow
+    val glowColors = RainbowColors.map { it.copy(alpha = 0.85f * glowPulse) }
+    val borderRadiusDp = with(LocalDensity.current) { effectiveBorderRadius.toDp() }
+
+    Box(
+        modifier = modifier
+            .shadowGlow(
+                gradientColors = glowColors,
+                borderRadius = borderRadiusDp,
+                blurRadius = (borderWidth * 2.5f).dp,  // Increased blur for more glow
+                offsetX = 0.dp,
+                offsetY = 0.dp,
+                spread = (borderWidth * 0.8f).dp,  // Increased spread for wider glow
+                enableBreathingEffect = true,
+                breathingEffectIntensity = (borderWidth * 1.2f).dp,  // More intense breathing
+                breathingDurationMillis = 2600,
+                alpha = if (revealPhaseActive) 0.9f else 1f,  // Higher alpha for visibility
+                glowLayers = 6  // Multiple layers for intense glow
+            )
+            .onSizeChanged { layoutSize = it }
+    ) {
         content()
 
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -404,43 +427,50 @@ fun AnimatedRainbowBorder(
 
             val activePath = revealPath ?: outline
 
-            val glowAlpha = 0.18f * glowPulse * if (revealPhaseActive) 0.7f else 1f
-            if (glowAlpha > 0f) {
-                drawPath(
-                    path = activePath,
-                    color = Color.White.copy(alpha = glowAlpha),
-                    style = Stroke(
-                        width = strokeWidthPx + strokeWidthPx * 0.45f,
-                        cap = StrokeCap.Round
-                    )
-                )
-            }
-
-            if (revealPhaseActive) {
-                val anchor = when (animationStyle) {
-                    RainbowAnimationStyle.TOP_CENTER_REVEAL -> topCenterAnchor
-                    RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> topRightAnchor
-                    RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> bottomCenterAnchor
-                    RainbowAnimationStyle.LEFT_CENTER_REVEAL -> leftCenterAnchor
-                    RainbowAnimationStyle.RIGHT_CENTER_REVEAL -> rightCenterAnchor
-                    RainbowAnimationStyle.CENTER_EXPAND -> topCenterAnchor
-                    else -> null
-                }
-                val anchorPos = FloatArray(2)
-                if (anchor != null && pathMeasure.getPosTan(anchor, anchorPos, null)) {
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.22f * glowPulse),
-                        radius = strokeWidthPx * 1.35f * revealFractionShaped.coerceIn(0.6f, 1.1f),
-                        center = Offset(anchorPos[0], anchorPos[1])
-                    )
-                }
-            }
-
+            // Prepare the rotating sweep shader for main border
             val sweepShader = geometryState.shader
             gradientMatrix.reset()
             gradientMatrix.postRotate(rotation, geometryState.center.x, geometryState.center.y)
             sweepShader.setLocalMatrix(gradientMatrix)
 
+            // Draw glow layers on the border path itself for intense effect
+            drawIntoCanvas { canvas ->
+                val glowLayers = listOf(
+                    Triple(strokeWidthPx * 3.5f, 0.20f, glowPulse * 0.7f),  // Far outer glow
+                    Triple(strokeWidthPx * 2.5f, 0.30f, glowPulse * 0.8f),  // Outer glow
+                    Triple(strokeWidthPx * 1.8f, 0.40f, glowPulse * 0.9f),  // Middle glow
+                    Triple(strokeWidthPx * 1.3f, 0.50f, glowPulse)          // Inner bright glow
+                )
+                
+                // Create fresh shader for each glow layer
+                glowLayers.forEach { (width, baseAlpha, pulse) ->
+                    val alpha = baseAlpha * pulse * if (revealPhaseActive) 0.8f else 1f
+                    if (alpha > 0f) {
+                        val glowPaint = Paint()
+                        glowPaint.style = PaintingStyle.Stroke
+                        glowPaint.strokeWidth = width
+                        glowPaint.strokeCap = StrokeCap.Round
+                        glowPaint.asFrameworkPaint().apply {
+                            isAntiAlias = true
+                            // Create fresh shader for this glow layer
+                            val layerShader = geometryState.shader
+                            val layerMatrix = android.graphics.Matrix()
+                            layerMatrix.postRotate(rotation, geometryState.center.x, geometryState.center.y)
+                            layerShader.setLocalMatrix(layerMatrix)
+                            setShader(layerShader)
+                            this.alpha = (alpha * 255).toInt()
+                            // Add blur for glow effect
+                            maskFilter = android.graphics.BlurMaskFilter(
+                                width * 0.4f,
+                                android.graphics.BlurMaskFilter.Blur.NORMAL
+                            )
+                        }
+                        canvas.drawPath(activePath, glowPaint)
+                    }
+                }
+            }
+
+            // Draw main rainbow border (crisp, no blur)
             drawIntoCanvas { canvas ->
                 val paint = gradientPaint
                 paint.style = PaintingStyle.Stroke
@@ -449,20 +479,9 @@ fun AnimatedRainbowBorder(
                 paint.asFrameworkPaint().apply {
                     isAntiAlias = true
                     setShader(sweepShader)
+                    maskFilter = null  // No blur on main line for crispness
                 }
                 canvas.drawPath(activePath, paint)
-            }
-
-            val highlightAlpha = 0.08f * glowPulse * if (revealPhaseActive) 0.6f else 1f
-            if (highlightAlpha > 0f) {
-                drawPath(
-                    path = activePath,
-                    color = Color.White.copy(alpha = highlightAlpha),
-                    style = Stroke(
-                        width = strokeWidthPx * 0.55f,
-                        cap = StrokeCap.Round
-                    )
-                )
             }
         }
     }

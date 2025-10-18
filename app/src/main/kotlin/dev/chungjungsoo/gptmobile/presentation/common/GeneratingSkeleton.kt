@@ -1,8 +1,8 @@
 package dev.chungjungsoo.gptmobile.presentation.common
 
+import android.graphics.BlurMaskFilter
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -25,11 +25,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chungjungsoo.gptmobile.data.dto.GlowAnimationStyle
@@ -130,10 +136,28 @@ fun GeneratingSkeleton(
     )
 
     val growFraction = if (isGrowStyle) easeOutBack(growAnim.value) else 1f
+    // true while the grow-style animation is running (used to dim/animate glow)
+    val isGrowPhase = isGrowStyle && !growComplete
+
+    // Build rainbow colors for the glow
+    val rainbowColors = remember(colorSteps, saturation) {
+        buildRainbowGlowColors(colorSteps, saturation)
+    }
+    
+    val glowRadius = cornerRadius * 1.35f + 12.dp
+    val glowAlpha = if (isGrowPhase) 0.55f * growFraction else 0.8f
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(cornerRadius))
+            .scrollingGradientGlow(
+                rainbowColors = rainbowColors,
+                colorShiftFraction = colorShiftFraction,
+                cycleMultiplier = cycleMultiplier,
+                cornerRadius = cornerRadius,
+                glowRadius = glowRadius,
+                alpha = glowAlpha
+            )
+            // Draw main rainbow content BEFORE clipping
             .drawRainbowGlow(
                 cornerRadius = cornerRadius,
                 colorShiftFraction = colorShiftFraction,
@@ -143,8 +167,9 @@ fun GeneratingSkeleton(
                 saturation = saturation,
                 animationStyle = animationStyle,
                 growFraction = growFraction,
-                isGrowPhase = isGrowStyle && !growComplete
+                isGrowPhase = isGrowPhase
             )
+            .clip(RoundedCornerShape(cornerRadius))
     ) {
         Box(
             modifier = Modifier
@@ -155,6 +180,65 @@ fun GeneratingSkeleton(
         }
     }
 }
+
+private fun Modifier.scrollingGradientGlow(
+    rainbowColors: List<Color>,
+    colorShiftFraction: Float,
+    cycleMultiplier: Float,
+    cornerRadius: Dp,
+    glowRadius: Dp,
+    alpha: Float
+): Modifier = this.then(
+    Modifier.drawBehind {
+        val resolvedAlpha = alpha.coerceIn(0f, 1f)
+        if (resolvedAlpha <= 0f) return@drawBehind
+        val blurRadiusPx = glowRadius.toPx()
+        if (blurRadiusPx <= 0f) return@drawBehind
+        val radiusPx = cornerRadius.toPx()
+        val extra = blurRadiusPx * 0.6f
+
+        // Use EXACT same scrolling logic as main rainbow animation
+        val cycleWidth = size.width.coerceAtLeast(1f) * cycleMultiplier
+        val phase = colorShiftFraction * cycleWidth
+        val startX = phase
+        val endX = startX + cycleWidth
+
+        // Create glow brush with SAME scrolling gradient as main rainbow
+        val glowBrush = Brush.horizontalGradient(
+            colors = rainbowColors.map { it.copy(alpha = resolvedAlpha) },
+            startX = startX,
+            endX = endX,
+            tileMode = TileMode.Repeated  // SAME as main rainbow!
+        )
+
+        drawIntoCanvas { canvas ->
+            val paint = Paint()
+            val frameworkPaint = paint.asFrameworkPaint()
+            
+            frameworkPaint.isAntiAlias = true
+            frameworkPaint.style = android.graphics.Paint.Style.FILL
+            frameworkPaint.maskFilter = BlurMaskFilter(blurRadiusPx, BlurMaskFilter.Blur.NORMAL)
+            
+            // Create shader from brush
+            if (glowBrush is ShaderBrush) {
+                frameworkPaint.shader = glowBrush.createShader(Size(size.width, size.height))
+            }
+
+            canvas.drawRoundRect(
+                left = -extra,
+                top = -extra,
+                right = size.width + extra,
+                bottom = size.height + extra,
+                radiusX = radiusPx + extra,
+                radiusY = radiusPx + extra,
+                paint = paint
+            )
+
+            frameworkPaint.shader = null
+            frameworkPaint.maskFilter = null
+        }
+    }
+)
 
 private fun Modifier.drawRainbowGlow(
     cornerRadius: Dp,
@@ -183,7 +267,9 @@ private fun Modifier.drawRainbowGlow(
             endX = endX,
             tileMode = TileMode.Repeated
         )
-
+        
+        // Note: Glow layers now handled by shadowGlow modifier above
+        
         // Apply clipping/masking based on animation style
         if (animationStyle == GlowAnimationStyle.CONTINUOUS_FLOW) {
             // No mask - show full rainbow

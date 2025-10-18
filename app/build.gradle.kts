@@ -113,6 +113,9 @@ dependencies {
     implementation(libs.hilt.navigation)
     implementation(libs.androidx.navigation)
 
+    // ShadowGlow - Advanced drop shadows
+    implementation("me.trishiraj:shadowglow:1.0.0")
+
     // OpenAI (Ktor required)
     implementation(libs.openai)
 
