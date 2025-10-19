@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -363,7 +362,7 @@ private fun BottomInputBar(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.MoreVert,
+                        painter = painterResource(id = SolarIcons.AltArrowRightLine),
                         contentDescription = "More Options",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -555,7 +554,7 @@ private fun BottomInputBar(
                                 .padding(0.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.Add,
+                                painter = painterResource(id = SolarIcons.DocumentLine),
                                 contentDescription = "Add",
                                 modifier = Modifier.size(16.dp)
                             )
