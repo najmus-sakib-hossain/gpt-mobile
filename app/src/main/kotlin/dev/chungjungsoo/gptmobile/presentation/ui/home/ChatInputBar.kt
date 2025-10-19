@@ -239,7 +239,7 @@ fun FullInputBar(
                                     .padding(0.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Add,
+                                    painter = painterResource(id = SolarIcons.DocumentLine),
                                     contentDescription = "Add",
                                     modifier = Modifier.size(16.dp)
                                 )

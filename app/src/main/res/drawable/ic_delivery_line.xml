@@ -9,8 +9,8 @@
         />
     <path
         android:pathData="M9.565 8.73c-.485-1.755-.727-2.633-.315-3.324c.411-.692 1.316-.927 3.126-1.398l1.92-.498c1.81-.47 2.715-.706 3.428-.307c.713.4.956 1.277 1.44 3.033l.515 1.862c.485 1.755.728 2.633.316 3.325c-.412.691-1.317.927-3.127 1.397l-1.92.499c-1.81.47-2.715.705-3.428.306c-.713-.4-.955-1.277-1.44-3.032z"
-        android:strokeWidth="1.5"
         android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
         android:fillColor="@android:color/transparent"
         android:strokeAlpha=".5"
         android:fillAlpha=".5"

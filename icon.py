@@ -20,56 +20,93 @@ def parse_svg_path_data(svg_file: Path) -> tuple[list[dict[str, str]], str, str,
         
         paths: list[dict[str, str]] = []
         
-        # Find all path elements
-        for path in root.iter('{http://www.w3.org/2000/svg}path'):
+        # Helper function to extract attributes from element and parent groups
+        def extract_attributes(element: ET.Element, parent_attribs: dict[str, str] | None = None) -> dict[str, str]:
+            """Extract path attributes, inheriting from parent groups"""
             path_data: dict[str, str] = {}
-            if 'd' in path.attrib:
-                path_data['pathData'] = path.attrib['d']
-            if 'fill' in path.attrib:
-                path_data['fillColor'] = path.attrib['fill']
-            if 'stroke' in path.attrib:
-                path_data['strokeColor'] = path.attrib['stroke']
-            if 'stroke-width' in path.attrib:
-                path_data['strokeWidth'] = path.attrib['stroke-width']
-            if 'opacity' in path.attrib:
-                path_data['alpha'] = path.attrib['opacity']
-            if 'fill-opacity' in path.attrib:
-                path_data['fillAlpha'] = path.attrib['fill-opacity']
-            if 'stroke-opacity' in path.attrib:
-                path_data['strokeAlpha'] = path.attrib['stroke-opacity']
-            if 'stroke-linecap' in path.attrib:
-                path_data['strokeLineCap'] = path.attrib['stroke-linecap']
-            if 'stroke-linejoin' in path.attrib:
-                path_data['strokeLineJoin'] = path.attrib['stroke-linejoin']
             
-            paths.append(path_data)
+            # Start with parent attributes if provided
+            if parent_attribs:
+                path_data.update(parent_attribs)
+            
+            # Path data
+            if 'd' in element.attrib:
+                path_data['pathData'] = element.attrib['d']
+            
+            # Fill attributes
+            if 'fill' in element.attrib:
+                path_data['fillColor'] = element.attrib['fill']
+            if 'fill-opacity' in element.attrib:
+                path_data['fillAlpha'] = element.attrib['fill-opacity']
+            
+            # Stroke attributes
+            if 'stroke' in element.attrib:
+                path_data['strokeColor'] = element.attrib['stroke']
+            if 'stroke-width' in element.attrib:
+                path_data['strokeWidth'] = element.attrib['stroke-width']
+            if 'stroke-opacity' in element.attrib:
+                path_data['strokeAlpha'] = element.attrib['stroke-opacity']
+            if 'stroke-linecap' in element.attrib:
+                path_data['strokeLineCap'] = element.attrib['stroke-linecap']
+            if 'stroke-linejoin' in element.attrib:
+                path_data['strokeLineJoin'] = element.attrib['stroke-linejoin']
+            
+            # Opacity (applies to both fill and stroke)
+            if 'opacity' in element.attrib:
+                path_data['alpha'] = element.attrib['opacity']
+            
+            return path_data
+        
+        # First, check for group elements and inherit their attributes
+        processed_paths: set[int] = set()
+        
+        for g_elem in root.iter('{http://www.w3.org/2000/svg}g'):
+            # Get group-level attributes
+            group_attribs = extract_attributes(g_elem)
+            # Remove pathData if accidentally captured
+            group_attribs.pop('pathData', None)
+            
+            # Process all paths within this group
+            for path in g_elem.findall('.//{http://www.w3.org/2000/svg}path'):
+                path_id = id(path)
+                if path_id not in processed_paths:
+                    path_data = extract_attributes(path, group_attribs)
+                    if 'pathData' in path_data:
+                        paths.append(path_data)
+                        processed_paths.add(path_id)
+        
+        # Also check for non-namespaced groups
+        for g_elem in root.iter('g'):
+            group_attribs = extract_attributes(g_elem)
+            group_attribs.pop('pathData', None)
+            
+            for path in g_elem.findall('.//path'):
+                path_id = id(path)
+                if path_id not in processed_paths:
+                    path_data = extract_attributes(path, group_attribs)
+                    if 'pathData' in path_data:
+                        paths.append(path_data)
+                        processed_paths.add(path_id)
+        
+        # Find all path elements that weren't in a group
+        for path in root.iter('{http://www.w3.org/2000/svg}path'):
+            path_id = id(path)
+            if path_id not in processed_paths:
+                path_data = extract_attributes(path)
+                if 'pathData' in path_data:
+                    paths.append(path_data)
+                    processed_paths.add(path_id)
         
         # Also check for paths without namespace
         for path in root.iter('path'):
-            path_data: dict[str, str] = {}
-            if 'd' in path.attrib:
-                path_data['pathData'] = path.attrib['d']
-            if 'fill' in path.attrib:
-                path_data['fillColor'] = path.attrib['fill']
-            if 'stroke' in path.attrib:
-                path_data['strokeColor'] = path.attrib['stroke']
-            if 'stroke-width' in path.attrib:
-                path_data['strokeWidth'] = path.attrib['stroke-width']
-            if 'opacity' in path.attrib:
-                path_data['alpha'] = path.attrib['opacity']
-            if 'fill-opacity' in path.attrib:
-                path_data['fillAlpha'] = path.attrib['fill-opacity']
-            if 'stroke-opacity' in path.attrib:
-                path_data['strokeAlpha'] = path.attrib['stroke-opacity']
-            if 'stroke-linecap' in path.attrib:
-                path_data['strokeLineCap'] = path.attrib['stroke-linecap']
-            if 'stroke-linejoin' in path.attrib:
-                path_data['strokeLineJoin'] = path.attrib['stroke-linejoin']
-            
-            if path_data and 'pathData' in path_data:
-                paths.append(path_data)
+            path_id = id(path)
+            if path_id not in processed_paths:
+                path_data = extract_attributes(path)
+                if 'pathData' in path_data:
+                    paths.append(path_data)
+                    processed_paths.add(path_id)
         
-        # Find ellipse elements
+        # Find ellipse elements (not in groups)
         for ellipse in root.iter('{http://www.w3.org/2000/svg}ellipse'):
             path_data: dict[str, str] = {}
             cx = float(ellipse.attrib.get('cx', 0))
@@ -136,9 +173,11 @@ def parse_svg_path_data(svg_file: Path) -> tuple[list[dict[str, str]], str, str,
         print(f"Error parsing {svg_file}: {e}")
         return [], '0 0 24 24', '24', '24'
 
-def svg_color_to_android(color: str | None) -> str:
+def svg_color_to_android(color: str | None, default: str | None = None) -> str | None:
     """Convert SVG color to Android color format"""
-    if not color or color == 'none':
+    if not color:
+        return default
+    if color == 'none':
         return '@android:color/transparent'
     if color == 'currentColor':
         return '@android:color/black'
@@ -181,38 +220,54 @@ def create_vector_drawable(svg_file: Path, output_file: Path) -> bool:
         xml_lines.append('    <path')
         xml_lines.append(f'        android:pathData="{path_data["pathData"]}"')
         
-        if 'strokeWidth' in path_data:
-            xml_lines.append(f'        android:strokeWidth="{path_data["strokeWidth"]}"')
+        # Handle stroke attributes first (these are more important for line icons)
+        has_stroke = 'strokeColor' in path_data
+        has_fill = 'fillColor' in path_data
         
-        if 'strokeColor' in path_data:
-            color = svg_color_to_android(path_data['strokeColor'])
-            xml_lines.append(f'        android:strokeColor="{color}"')
+        if has_stroke:
+            stroke_color = svg_color_to_android(path_data['strokeColor'], '@android:color/black')
+            if stroke_color:
+                xml_lines.append(f'        android:strokeColor="{stroke_color}"')
+            
+            if 'strokeWidth' in path_data:
+                xml_lines.append(f'        android:strokeWidth="{path_data["strokeWidth"]}"')
+            
+            if 'strokeLineCap' in path_data:
+                xml_lines.append(f'        android:strokeLineCap="{path_data["strokeLineCap"]}"')
+            
+            if 'strokeLineJoin' in path_data:
+                xml_lines.append(f'        android:strokeLineJoin="{path_data["strokeLineJoin"]}"')
+            
+            if 'strokeAlpha' in path_data:
+                xml_lines.append(f'        android:strokeAlpha="{path_data["strokeAlpha"]}"')
         
-        if 'fillColor' in path_data:
-            color = svg_color_to_android(path_data['fillColor'])
-            xml_lines.append(f'        android:fillColor="{color}"')
-        elif 'strokeColor' not in path_data:
-            # If no fill or stroke specified, default to black fill
-            xml_lines.append('        android:fillColor="@android:color/black"')
-        else:
-            # If only stroke is specified, transparent fill
+        # Handle fill attributes
+        if has_fill:
+            fill_color = svg_color_to_android(path_data['fillColor'], None)
+            if fill_color:
+                xml_lines.append(f'        android:fillColor="{fill_color}"')
+            elif not has_stroke:
+                # Default to black fill if no stroke
+                xml_lines.append('        android:fillColor="@android:color/black"')
+            else:
+                # If we have a stroke but fill is 'none', use transparent
+                xml_lines.append('        android:fillColor="@android:color/transparent"')
+        elif has_stroke and not has_fill:
+            # Stroke without explicit fill - use transparent fill
             xml_lines.append('        android:fillColor="@android:color/transparent"')
-        
-        if 'strokeLineCap' in path_data:
-            xml_lines.append(f'        android:strokeLineCap="{path_data["strokeLineCap"]}"')
-        
-        if 'strokeLineJoin' in path_data:
-            xml_lines.append(f'        android:strokeLineJoin="{path_data["strokeLineJoin"]}"')
-        
-        if 'strokeAlpha' in path_data:
-            xml_lines.append(f'        android:strokeAlpha="{path_data["strokeAlpha"]}"')
+        elif not has_stroke and not has_fill:
+            # No stroke or fill specified, default to black fill
+            xml_lines.append('        android:fillColor="@android:color/black"')
         
         if 'fillAlpha' in path_data:
             xml_lines.append(f'        android:fillAlpha="{path_data["fillAlpha"]}"')
         
+        # Handle general opacity (applies to both fill and stroke)
         if 'alpha' in path_data:
-            xml_lines.append(f'        android:strokeAlpha="{path_data["alpha"]}"')
-            xml_lines.append(f'        android:fillAlpha="{path_data["alpha"]}"')
+            if not has_stroke or 'strokeAlpha' not in path_data:
+                xml_lines.append(f'        android:strokeAlpha="{path_data["alpha"]}"')
+            if 'fillAlpha' not in path_data:
+                xml_lines.append(f'        android:fillAlpha="{path_data["alpha"]}"')
         
         xml_lines.append('        />')
     

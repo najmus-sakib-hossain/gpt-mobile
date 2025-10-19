@@ -5,21 +5,29 @@
     android:viewportHeight="24">
     <path
         android:pathData="M4 18V6m16 0v12"
-        android:fillColor="@android:color/black"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
         android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent"
         />
     <path
         android:pathData="M12 10c4.418 0 8-1.79 8-4s-3.582-4-8-4s-8 1.79-8 4s3.582 4 8 4Z"
-        android:fillColor="@android:color/black"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent"
         />
     <path
         android:pathData="M20 12c0 2.21-3.582 4-8 4s-8-1.79-8-4"
-        android:fillColor="@android:color/black"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent"
         android:strokeAlpha=".5"
         android:fillAlpha=".5"
         />
     <path
         android:pathData="M20 18c0 2.21-3.582 4-8 4s-8-1.79-8-4"
-        android:fillColor="@android:color/black"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent"
         />
 </vector>
