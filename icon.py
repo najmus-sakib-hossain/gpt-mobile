@@ -93,6 +93,38 @@ def parse_svg_path_data(svg_file: Path) -> tuple[list[dict[str, str]], str, str,
             if path_data and 'pathData' in path_data:
                 paths.append(path_data)
         
+        # Find circle elements
+        for circle in root.iter('{http://www.w3.org/2000/svg}circle'):
+            path_data: dict[str, str] = {}
+            cx = float(circle.attrib.get('cx', 0))
+            cy = float(circle.attrib.get('cy', 0))
+            r = float(circle.attrib.get('r', 0))
+            # Convert circle to ellipse path
+            path_data['pathData'] = f'M {cx} {cy} m -{r} 0 a {r} {r} 0 1 1 {r*2} 0 a {r} {r} 0 1 1 -{r*2} 0'
+            if 'fill' in circle.attrib:
+                path_data['fillColor'] = circle.attrib['fill']
+            if 'stroke' in circle.attrib:
+                path_data['strokeColor'] = circle.attrib['stroke']
+            if 'stroke-width' in circle.attrib:
+                path_data['strokeWidth'] = circle.attrib['stroke-width']
+            paths.append(path_data)
+        
+        for circle in root.iter('circle'):
+            path_data: dict[str, str] = {}
+            cx = float(circle.attrib.get('cx', 0))
+            cy = float(circle.attrib.get('cy', 0))
+            r = float(circle.attrib.get('r', 0))
+            # Convert circle to ellipse path
+            path_data['pathData'] = f'M {cx} {cy} m -{r} 0 a {r} {r} 0 1 1 {r*2} 0 a {r} {r} 0 1 1 -{r*2} 0'
+            if 'fill' in circle.attrib:
+                path_data['fillColor'] = circle.attrib['fill']
+            if 'stroke' in circle.attrib:
+                path_data['strokeColor'] = circle.attrib['stroke']
+            if 'stroke-width' in circle.attrib:
+                path_data['strokeWidth'] = circle.attrib['stroke-width']
+            if path_data and 'pathData' in path_data:
+                paths.append(path_data)
+        
         # Get viewBox for dimensions
         viewbox = root.attrib.get('viewBox', '0 0 24 24')
         width = root.attrib.get('width', '24')

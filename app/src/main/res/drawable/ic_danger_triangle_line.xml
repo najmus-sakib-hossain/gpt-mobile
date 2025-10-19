@@ -18,4 +18,8 @@
         android:fillColor="@android:color/transparent"
         android:strokeLineCap="round"
         />
+    <path
+        android:pathData="M 12.0 16.0 m -1.0 0 a 1.0 1.0 0 1 1 2.0 0 a 1.0 1.0 0 1 1 -2.0 0"
+        android:fillColor="@android:color/black"
+        />
 </vector>

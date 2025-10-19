@@ -9,4 +9,8 @@
         android:strokeAlpha=".5"
         android:fillAlpha=".5"
         />
+    <path
+        android:pathData="M 12.0 12.0 m -3.0 0 a 3.0 3.0 0 1 1 6.0 0 a 3.0 3.0 0 1 1 -6.0 0"
+        android:fillColor="@android:color/black"
+        />
 </vector>
