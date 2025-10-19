@@ -12,6 +12,11 @@ object SolarIcons {
     // Arrow Icons
     val ArrowUpLine: Int @Composable get() = R.drawable.ic_arrow_up_line
     val ArrowUpBold: Int @Composable get() = R.drawable.ic_arrow_up_bold
+
+    // Camera Icons
+    val CameraLine: Int @Composable get() = R.drawable.ic_camera_line
+    val CameraBold: Int @Composable get() = R.drawable.ic_camera_bold
+    
     val ArrowDownLine: Int @Composable get() = R.drawable.ic_arrow_down_line
     val ArrowDownBold: Int @Composable get() = R.drawable.ic_arrow_down_bold
     

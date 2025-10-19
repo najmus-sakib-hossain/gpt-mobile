@@ -63,6 +63,7 @@ fun AnimatedInputFab(
     onNewTextPrompt: () -> Unit,
     onAddMedia: () -> Unit,
     onMentionClick: () -> Unit = {},
+    onCameraClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showSpeedDial by remember { mutableStateOf(false) }
@@ -144,6 +145,7 @@ fun AnimatedInputFab(
                 onSendClick = onSendMessage,
                 onVoiceClick = onVoiceMemo,
                 onLiveAIClick = onLiveAI,
+                onCameraClick = onCameraClick,
                 modifier = Modifier.fillMaxWidth()
             )
         }

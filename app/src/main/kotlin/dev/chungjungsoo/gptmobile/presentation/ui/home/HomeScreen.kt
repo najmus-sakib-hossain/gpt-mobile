@@ -280,6 +280,9 @@ fun HomeScreen(
                     },
                     onMentionClick = {
                         Toast.makeText(context, "Mention feature coming soon", Toast.LENGTH_SHORT).show()
+                    },
+                    onCameraClick = {
+                        Toast.makeText(context, "Camera feature coming soon", Toast.LENGTH_SHORT).show()
                     }
                 )
             }
