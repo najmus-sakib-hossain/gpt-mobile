@@ -608,7 +608,7 @@ fun ProviderLogoButton(
             painter = painterResource(id = SolarIcons.Google),
             contentDescription = "Provider: ${provider.name}",
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(21.dp)
         )
     }
 }
