@@ -60,8 +60,8 @@ fun BottomNavigationBar(navController: NavHostController) {
                     ),
                     BottomNavItem(
                             title = stringResource(R.string.automations),
-                            selectedIcon = SolarIcons.HourglassLineLine,
-                            unselectedIcon = SolarIcons.HourglassLineBold,
+                            selectedIcon = SolarIcons.HourglassLineBold,
+                            unselectedIcon = SolarIcons.HourglassLineLine,
                             route = Route.AUTOMATIONS
                     ),
                     BottomNavItem(

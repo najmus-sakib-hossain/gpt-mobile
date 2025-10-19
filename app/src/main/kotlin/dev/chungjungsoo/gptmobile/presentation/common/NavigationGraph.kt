@@ -106,7 +106,7 @@ fun SetupNavGraph(navController: NavHostController) {
                 ) {
                 homeScreenNavigation(navController, drawerState, scope, homeViewModel)
                 startScreenNavigation(navController)
-                setupNavigation(navController)
+                setupNavigation(navController)HourglassLineLine
                 settingNavigation(navController)
                 chatScreenNavigation(navController)
                 offlineModelNavigation(navController)
