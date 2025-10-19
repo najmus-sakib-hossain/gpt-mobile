@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,14 +25,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -161,7 +159,7 @@ fun FullInputBar(
                         .padding(top = 4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        painter = painterResource(id = SolarIcons.AltArrowRightLine),
                         contentDescription = "Back",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -389,15 +387,15 @@ private fun BottomInputBar(
                         onClick = onProviderClick
                     )
                     
-                    // 2. Search Type
+                    // 2. Chat Type
                     Box {
                         IconButton(
                             onClick = { showSearchTypeMenu = true },
                             modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search Type",
+                                painter = painterResource(id = SolarIcons.VideocameraRecordLine),
+                                contentDescription = "Chat Type",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -425,7 +423,7 @@ private fun BottomInputBar(
                             modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.List,
+                                painter = painterResource(id = SolarIcons.CalendarAddLine),
                                 contentDescription = "Context",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
@@ -607,16 +605,10 @@ fun ProviderLogoButton(
     ) {
         // You can add actual logos here
         Icon(
-            imageVector = when (provider) {
-                ApiType.GOOGLE -> Icons.Default.Search
-                ApiType.OPENAI -> Icons.Default.Face
-                ApiType.ANTHROPIC -> Icons.Default.Face
-                ApiType.OFFLINE_AI -> Icons.Default.Face
-                else -> Icons.Default.Face
-            },
+            painter = painterResource(id = SolarIcons.Google),
             contentDescription = "Provider: ${provider.name}",
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(14.dp)
         )
     }
 }
@@ -662,8 +654,8 @@ fun SwipeableActionButton(
     val displayMode = if (hasText) 1 else currentMode
     
     val icons = listOf(
-        SolarIcons.PlayLine,        // Live AI
-        SolarIcons.SendLine,         // Send
+        SolarIcons.PlayStreamLine,        // Live AI
+        SolarIcons.ArrowUpLine,         // Send
         SolarIcons.MicrophoneLine   // Voice
     )
     
@@ -679,9 +671,9 @@ fun SwipeableActionButton(
         color = colors[displayMode],
         shadowElevation = 0.dp,  // Remove elevation/shadow
         tonalElevation = 0.dp,   // Remove tonal elevation
-        border = null,           // Ensure no border
+        border = BorderStroke(0.dp, Color.Transparent),  // Ensure no border
         modifier = Modifier
-            .size(48.dp)
+            .size(56.dp)
             .pointerInput(hasText) {
                 // Only allow swiping when there's no text
                 if (!hasText) {
@@ -784,9 +776,9 @@ fun GesturalActionButton(
         ) {
             Icon(
                 painter = painterResource(id = when {
-                    hasText -> SolarIcons.SendLine
-                    isLiveAIMode -> SolarIcons.PlayLine
-                    else -> SolarIcons.MicrophoneLine
+                    hasText -> SolarIcons.ArrowDownLine
+                    isLiveAIMode -> SolarIcons.PlayStreamLine
+                    else -> SolarIcons.ArrowDownLine
                 }),
                 contentDescription = when {
                     hasText -> "Send"

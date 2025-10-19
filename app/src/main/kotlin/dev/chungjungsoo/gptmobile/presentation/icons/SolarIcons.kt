@@ -9,6 +9,18 @@ import dev.chungjungsoo.gptmobile.R
  * Use Bold variants for active/selected states
  */
 object SolarIcons {
+    // AltArrowRight Icons
+    val AltArrowRightLine: Int @Composable get() = R.drawable.ic_alt_arrow_right_line
+    val AltArrowRightBold: Int @Composable get() = R.drawable.ic_alt_arrow_right_bold
+
+    // Documents Icons
+    val DocumentLine: Int @Composable get() = R.drawable.ic_documents_line
+    val DocumentBold: Int @Composable get() = R.drawable.ic_documents_bold
+
+    // Play Stream Icons
+    val PlayStreamLine: Int @Composable get() = R.drawable.ic_play_stream_line
+    val PlayStreamBold: Int @Composable get() = R.drawable.ic_play_stream_bold
+
     // Arrow Icons
     val ArrowUpLine: Int @Composable get() = R.drawable.ic_arrow_up_line
     val ArrowUpBold: Int @Composable get() = R.drawable.ic_arrow_up_bold
@@ -16,7 +28,7 @@ object SolarIcons {
     // Camera Icons
     val CameraLine: Int @Composable get() = R.drawable.ic_camera_line
     val CameraBold: Int @Composable get() = R.drawable.ic_camera_bold
-    
+
     val ArrowDownLine: Int @Composable get() = R.drawable.ic_arrow_down_line
     val ArrowDownBold: Int @Composable get() = R.drawable.ic_arrow_down_bold
     
