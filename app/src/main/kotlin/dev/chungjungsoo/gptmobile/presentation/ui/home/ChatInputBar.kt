@@ -359,7 +359,7 @@ private fun BottomInputBar(
                 // Single expandable menu icon when focused
                 IconButton(
                     onClick = { onExpandedIconsChanged(!showExpandedIcons) },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(20.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = SolarIcons.AltArrowRightLine),
@@ -607,7 +607,7 @@ fun ProviderLogoButton(
             painter = painterResource(id = SolarIcons.Google),
             contentDescription = "Provider: ${provider.name}",
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(21.dp)
+            modifier = Modifier.size(22.dp)
         )
     }
 }
