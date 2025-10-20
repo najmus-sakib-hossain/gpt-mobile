@@ -1,16 +1,24 @@
 package dev.chungjungsoo.gptmobile.presentation.common
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.Alignment
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -25,12 +33,11 @@ import dev.chungjungsoo.gptmobile.presentation.ui.chat.ChatScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.home.HomeScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.home.HomeViewModel
 import dev.chungjungsoo.gptmobile.presentation.ui.home.LibraryScreen
+import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.ModelBrowserScreen
+import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.ModelDetailScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.AboutScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.LicenseScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.PlatformSettingScreen
-import java.net.URLEncoder
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.SettingScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setting.SettingViewModel
 import dev.chungjungsoo.gptmobile.presentation.ui.setup.SelectModelScreen
@@ -40,16 +47,9 @@ import dev.chungjungsoo.gptmobile.presentation.ui.setup.SetupCompleteScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.setup.SetupViewModel
 import dev.chungjungsoo.gptmobile.presentation.ui.setup.TokenInputScreen
 import dev.chungjungsoo.gptmobile.presentation.ui.startscreen.StartScreen
-import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.material3.DrawerValue
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.material3.ModalNavigationDrawer
-import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.ModelBrowserScreen
-import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.ModelDetailScreen
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 fun NavGraphBuilder.startScreenNavigation(navController: NavHostController) {
     composable(Route.GET_STARTED) {
@@ -106,7 +106,7 @@ fun SetupNavGraph(navController: NavHostController) {
                 ) {
                 homeScreenNavigation(navController, drawerState, scope, homeViewModel)
                 startScreenNavigation(navController)
-                setupNavigation(navController)HourglassLineLine
+                setupNavigation(navController)
                 settingNavigation(navController)
                 chatScreenNavigation(navController)
                 offlineModelNavigation(navController)

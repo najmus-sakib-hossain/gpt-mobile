@@ -13,10 +13,12 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -45,9 +47,16 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import dev.chungjungsoo.gptmobile.data.dto.RainbowAnimationStyle
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
+import kotlin.math.PI
+import kotlin.math.max
+import kotlinx.coroutines.launch
 // Prefer external ShadowGlow when available. If Gradle fails or offline, use local fallback.
 // External (preferred): import me.trishiraj.shadowglow.shadowGlow
 import dev.chungjungsoo.gptmobile.presentation.common.fallback.shadowGlow
@@ -80,6 +89,16 @@ private fun easeOutBack(value: Float, overshoot: Float = 1.06f): Float {
     val c3 = c1 + 1f
     val t = clamped - 1f
     return 1f + c3 * t * t * t + c1 * t * t
+}
+
+private fun easeOutElastic(value: Float): Float {
+    val clamped = value.coerceIn(0f, 1f)
+    if (clamped == 0f) return 0f
+    if (clamped == 1f) return 1f
+    // Simplified elastic easing with bounce effect
+    val bounce = sin(clamped * 3.5f * PI.toFloat())
+    val decay = 1f - clamped
+    return clamped + (bounce * decay * 0.3f)
 }
 
 private data class BorderGeometry(
@@ -230,10 +249,10 @@ fun AnimatedRainbowBorder(
 ) {
     // Use device corner radius if not specified
     val deviceCornerRadius = MaterialTheme.shapes.extraLarge.topStart
-    val effectiveBorderRadius = borderRadius ?: with(LocalDensity.current) { 
+    val effectiveBorderRadius = borderRadius ?: with(LocalDensity.current) {
         deviceCornerRadius.toPx(shapeSize = Size.Unspecified, density = this)
     }
-    
+
     if (!enabled) {
         Box(modifier = modifier) { content() }
         return
@@ -243,6 +262,12 @@ fun AnimatedRainbowBorder(
     val revealAnim = remember(animationStyle) { Animatable(if (revealStyleActive) 0f else 1f) }
     var revealComplete by remember(animationStyle) { mutableStateOf(!revealStyleActive) }
     val latestEnabled by rememberUpdatedState(enabled)
+
+    // Ripple blur animation state
+    val rippleAnim = remember(animationStyle) { Animatable(0f) }
+    val scrollOffsetAnim = remember(animationStyle) { Animatable(0f) }
+    var rippleActive by remember(animationStyle) { mutableStateOf(false) }
+
     val revealSpec: AnimationSpec<Float> = remember(animationStyle) {
         when (animationStyle) {
             RainbowAnimationStyle.TOP_CENTER_REVEAL -> tween(
@@ -276,21 +301,62 @@ fun AnimatedRainbowBorder(
         }
     }
 
+    // Ripple blur animation spec - smooth single expansion
+    val rippleSpec: AnimationSpec<Float> = remember(animationStyle) {
+        tween(
+            durationMillis = 1200,
+            easing = FastOutSlowInEasing
+        )
+    }
+
+    // Bouncy scroll animation spec - very bouncy spring effect
+    val scrollBounceSpec: AnimationSpec<Float> = remember(animationStyle) {
+        spring(
+            dampingRatio = 0.3f,  // Lower damping for more bounce
+            stiffness = 300f      // High stiffness for energetic spring
+        )
+    }
+
     LaunchedEffect(animationStyle, latestEnabled) {
         if (!latestEnabled) {
             revealComplete = !revealStyleActive
             revealAnim.snapTo(if (revealStyleActive) 0f else 1f)
+            rippleAnim.snapTo(0f)
+            scrollOffsetAnim.snapTo(0f)
+            rippleActive = false
             return@LaunchedEffect
         }
 
         if (revealStyleActive) {
             revealComplete = false
             revealAnim.snapTo(0f)
+
+            // Start ripple blur animation and scroll
+            rippleActive = true
+            rippleAnim.snapTo(0f)
+            scrollOffsetAnim.snapTo(35f)  // Start from an offset position
+
+            // Animate scroll with very bouncy spring effect
+            launch {
+                scrollOffsetAnim.animateTo(
+                    targetValue = 0f,  // Spring directly to 0 from initial offset
+                    animationSpec = scrollBounceSpec
+                )
+            }
+
+            // Animate ripple blur expansion - single smooth expansion
+            launch {
+                rippleAnim.animateTo(targetValue = 1f, animationSpec = rippleSpec)
+                rippleActive = false
+            }
+
+            // Animate border reveal
             revealAnim.animateTo(targetValue = 1f, animationSpec = revealSpec)
             revealComplete = true
         } else {
             revealAnim.snapTo(1f)
             revealComplete = true
+            rippleActive = false
         }
     }
 
@@ -332,7 +398,7 @@ fun AnimatedRainbowBorder(
     }
 
     // Create enhanced rainbow gradient colors for the glow
-    val glowColors = RainbowColors.map { it.copy(alpha = 0.85f * glowPulse) }
+    val glowColors = RainbowColors.map { it.copy(alpha = 0.6f * glowPulse) }  // More translucent
     val borderRadiusDp = with(LocalDensity.current) { effectiveBorderRadius.toDp() }
 
     Box(
@@ -340,17 +406,23 @@ fun AnimatedRainbowBorder(
             .shadowGlow(
                 gradientColors = glowColors,
                 borderRadius = borderRadiusDp,
-                blurRadius = (borderWidth * 2.5f).dp,  // Increased blur for more glow
+                blurRadius = (borderWidth * 3.5f).dp,  // Increased blur for smoother glow
                 offsetX = 0.dp,
                 offsetY = 0.dp,
-                spread = (borderWidth * 0.8f).dp,  // Increased spread for wider glow
+                spread = (borderWidth * 1.2f).dp,  // Increased spread for wider, softer glow
                 enableBreathingEffect = true,
-                breathingEffectIntensity = (borderWidth * 1.2f).dp,  // More intense breathing
+                breathingEffectIntensity = (borderWidth * 1.5f).dp,  // More breathing effect
                 breathingDurationMillis = 2600,
-                alpha = if (revealPhaseActive) 0.9f else 1f,  // Higher alpha for visibility
-                glowLayers = 6  // Multiple layers for intense glow
+                alpha = if (revealPhaseActive) 0.7f else 0.85f,  // More translucent
+                glowLayers = 8  // More layers for smoother gradient
             )
             .onSizeChanged { layoutSize = it }
+            .offset {
+                IntOffset(
+                    x = 0,
+                    y = -scrollOffsetAnim.value.roundToInt()
+                )
+            }
     ) {
         content()
 
@@ -407,14 +479,14 @@ fun AnimatedRainbowBorder(
                         RainbowAnimationStyle.CENTER_EXPAND -> topCenterAnchor // Start from any point for expand
                         else -> topCenterAnchor
                     }
-                    
+
                     // For CENTER_EXPAND, show full border progressively
                     val visibleLength = if (animationStyle == RainbowAnimationStyle.CENTER_EXPAND) {
                         totalLength * fraction
                     } else {
                         totalLength * fraction
                     }
-                    
+
                     val forwardPortion = forwardBias(animationStyle).coerceIn(0.35f, 0.85f)
                     val forwardVisible = visibleLength * forwardPortion
                     val backwardVisible = visibleLength - forwardVisible
@@ -436,15 +508,16 @@ fun AnimatedRainbowBorder(
             // Draw glow layers on the border path itself for intense effect
             drawIntoCanvas { canvas ->
                 val glowLayers = listOf(
-                    Triple(strokeWidthPx * 3.5f, 0.20f, glowPulse * 0.7f),  // Far outer glow
-                    Triple(strokeWidthPx * 2.5f, 0.30f, glowPulse * 0.8f),  // Outer glow
-                    Triple(strokeWidthPx * 1.8f, 0.40f, glowPulse * 0.9f),  // Middle glow
-                    Triple(strokeWidthPx * 1.3f, 0.50f, glowPulse)          // Inner bright glow
+                    Triple(strokeWidthPx * 4.5f, 0.08f, glowPulse * 0.7f),  // Far outer glow - very translucent
+                    Triple(strokeWidthPx * 3.5f, 0.12f, glowPulse * 0.8f),  // Outer glow - translucent
+                    Triple(strokeWidthPx * 2.5f, 0.18f, glowPulse * 0.9f),  // Middle glow - semi-translucent
+                    Triple(strokeWidthPx * 1.8f, 0.25f, glowPulse * 0.95f), // Inner glow - more visible
+                    Triple(strokeWidthPx * 1.2f, 0.35f, glowPulse)          // Inner bright glow
                 )
-                
+
                 // Create fresh shader for each glow layer
                 glowLayers.forEach { (width, baseAlpha, pulse) ->
-                    val alpha = baseAlpha * pulse * if (revealPhaseActive) 0.8f else 1f
+                    val alpha = baseAlpha * pulse * if (revealPhaseActive) 0.7f else 1f
                     if (alpha > 0f) {
                         val glowPaint = Paint()
                         glowPaint.style = PaintingStyle.Stroke
@@ -452,6 +525,7 @@ fun AnimatedRainbowBorder(
                         glowPaint.strokeCap = StrokeCap.Round
                         glowPaint.asFrameworkPaint().apply {
                             isAntiAlias = true
+                            isDither = true
                             // Create fresh shader for this glow layer
                             val layerShader = geometryState.shader
                             val layerMatrix = android.graphics.Matrix()
@@ -459,9 +533,9 @@ fun AnimatedRainbowBorder(
                             layerShader.setLocalMatrix(layerMatrix)
                             setShader(layerShader)
                             this.alpha = (alpha * 255).toInt()
-                            // Add blur for glow effect
+                            // Add smooth blur for glow effect - increased blur radius for smoother effect
                             maskFilter = android.graphics.BlurMaskFilter(
-                                width * 0.4f,
+                                width * 1.2f,  // Increased from 0.4f for much smoother blur
                                 android.graphics.BlurMaskFilter.Blur.NORMAL
                             )
                         }
@@ -482,6 +556,89 @@ fun AnimatedRainbowBorder(
                     maskFilter = null  // No blur on main line for crispness
                 }
                 canvas.drawPath(activePath, paint)
+            }
+
+            // Draw ripple blur effect - transparent white blur expanding from start point
+            if (rippleActive) {
+                val rippleFraction = rippleAnim.value
+                if (rippleFraction > 0f) {
+                    // Get starting position based on animation style
+                    val startOffset = when (animationStyle) {
+                        RainbowAnimationStyle.TOP_CENTER_REVEAL -> {
+                            Offset(rect.left + rect.width / 2f, rect.top + radiusPx * 0.25f)
+                        }
+                        RainbowAnimationStyle.TOP_RIGHT_BOUNCE -> {
+                            Offset(rect.right - radiusPx * 0.35f, rect.top + radiusPx * 0.65f)
+                        }
+                        RainbowAnimationStyle.BOTTOM_CENTER_REVEAL -> {
+                            Offset(rect.left + rect.width / 2f, rect.bottom - radiusPx * 0.25f)
+                        }
+                        RainbowAnimationStyle.LEFT_CENTER_REVEAL -> {
+                            Offset(rect.left + radiusPx * 0.25f, rect.top + rect.height / 2f)
+                        }
+                        RainbowAnimationStyle.RIGHT_CENTER_REVEAL -> {
+                            Offset(rect.right - radiusPx * 0.25f, rect.top + rect.height / 2f)
+                        }
+                        RainbowAnimationStyle.CENTER_EXPAND -> {
+                            rect.center
+                        }
+                        else -> {
+                            Offset(rect.left + rect.width / 2f, rect.top + radiusPx * 0.25f)
+                        }
+                    }
+
+                    // Calculate ripple radius - smooth single expansion
+                    val maxDistanceFromStart = sqrt(
+                        (size.width - startOffset.x) * (size.width - startOffset.x) +
+                        (size.height - startOffset.y) * (size.height - startOffset.y)
+                    ) * 1.8f
+
+                    // Smooth ease out expansion (no bouncing)
+                    val easedFraction = FastOutSlowInEasing.transform(rippleFraction)
+                    val rippleRadius = maxDistanceFromStart * easedFraction
+
+                    // Fade out progressively as it expands - more visible
+                    val rippleAlpha = (1f - easedFraction * 0.7f) * 0.85f
+
+                    if (rippleAlpha > 0.01f && rippleRadius > strokeWidthPx) {
+                        drawIntoCanvas { canvas ->
+                            // Multiple transparent white blur layers for smooth glass-like effect
+                            // Much more visible with higher alpha values
+                            val blurLayers = listOf(
+                                Triple(strokeWidthPx * 14f, 0.12f, rippleRadius * 1.12f),
+                                Triple(strokeWidthPx * 12f, 0.16f, rippleRadius * 1.09f),
+                                Triple(strokeWidthPx * 10f, 0.20f, rippleRadius * 1.06f),
+                                Triple(strokeWidthPx * 8f, 0.25f, rippleRadius * 1.03f),
+                                Triple(strokeWidthPx * 6f, 0.32f, rippleRadius),
+                                Triple(strokeWidthPx * 4f, 0.40f, rippleRadius * 0.98f),
+                                Triple(strokeWidthPx * 2.5f, 0.50f, rippleRadius * 0.96f)
+                            )
+
+                            blurLayers.forEach { (blurWidth, baseAlpha, radius) ->
+                                val layerAlpha = baseAlpha * rippleAlpha
+                                if (layerAlpha > 0.01f && radius > 0f) {
+                                    val ripplePaint = Paint()
+                                    ripplePaint.style = PaintingStyle.Stroke
+                                    ripplePaint.strokeWidth = blurWidth
+                                    ripplePaint.color = Color.White.copy(alpha = layerAlpha)
+                                    ripplePaint.asFrameworkPaint().apply {
+                                        isAntiAlias = true
+                                        isDither = true
+                                        // Pure transparent white blur - no shader
+                                        setShader(null)
+                                        this.alpha = (layerAlpha * 255).toInt()
+                                        // Heavy blur for smooth glass effect
+                                        maskFilter = android.graphics.BlurMaskFilter(
+                                            blurWidth * 2.5f,
+                                            android.graphics.BlurMaskFilter.Blur.NORMAL
+                                        )
+                                    }
+                                    canvas.drawCircle(startOffset, radius, ripplePaint)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
