@@ -77,18 +77,37 @@ fun GlowingDrawingCanvas() {
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
+                var previousPoint: Offset? = null
+                
                 detectDragGestures(
                     onDragStart = { startOffset ->
                         currentPath = Path().apply { moveTo(startOffset.x, startOffset.y) }
                         currentDragPosition = startOffset
+                        previousPoint = startOffset
                     },
                     onDragEnd = {
                         currentPath = null
                         currentDragPosition = null
+                        previousPoint = null
                     },
                     onDrag = { change, _ ->
-                        currentPath?.lineTo(change.position.x, change.position.y)
-                        currentDragPosition = change.position
+                        val currentPoint = change.position
+                        val prevPoint = previousPoint
+                        
+                        if (prevPoint != null) {
+                            // Use quadratic bezier curve for smooth drawing
+                            val midPoint = Offset(
+                                (prevPoint.x + currentPoint.x) / 2f,
+                                (prevPoint.y + currentPoint.y) / 2f
+                            )
+                            currentPath?.quadraticBezierTo(
+                                prevPoint.x, prevPoint.y,
+                                midPoint.x, midPoint.y
+                            )
+                        }
+                        
+                        previousPoint = currentPoint
+                        currentDragPosition = currentPoint
                     }
                 )
             }
