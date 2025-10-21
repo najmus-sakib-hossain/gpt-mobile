@@ -102,6 +102,7 @@ import dev.chungjungsoo.gptmobile.data.model.ApiType
 import dev.chungjungsoo.gptmobile.presentation.common.GeneratingSkeleton
 import dev.chungjungsoo.gptmobile.presentation.common.GlowingDrawingCanvas
 import dev.chungjungsoo.gptmobile.presentation.common.PlatformCheckBoxItem
+import dev.chungjungsoo.gptmobile.presentation.common.ShinyText
 import dev.chungjungsoo.gptmobile.presentation.icons.SolarIcons
 import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.OfflineModelViewModel
 import dev.chungjungsoo.gptmobile.util.getPlatformTitleResources
@@ -370,6 +371,11 @@ fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
+        // Shiny Text Section - Top Priority
+        item {
+            ShinyTextSection()
+        }
+
         // Animated Rainbow Drawing Canvas Section - Top Priority
         item {
             AnimatedRainbowCanvasSection()
@@ -436,6 +442,78 @@ fun HomeContent(
                     onClick = { onExistingChatClick(chatRoom) }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ShinyTextSection() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "✨",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                Column {
+                    Text(
+                        text = "Shiny Text Effect",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Animated gradient shine effect on text",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Shiny Text Demos
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                ShinyText(
+                    text = "Hello Android!",
+                    speedMillis = 3000,
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                
+                ShinyText(
+                    text = "Shiny Effect Demo",
+                    speedMillis = 4000,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+                
+                ShinyText(
+                    text = "Smooth Gradient Animation",
+                    speedMillis = 5000,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "💡 Tip: This effect uses animated gradients that sweep across the text",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
