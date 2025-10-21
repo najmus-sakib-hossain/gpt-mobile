@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -99,6 +100,7 @@ import dev.chungjungsoo.gptmobile.data.dto.Platform
 import dev.chungjungsoo.gptmobile.data.dto.exampleModelsList
 import dev.chungjungsoo.gptmobile.data.model.ApiType
 import dev.chungjungsoo.gptmobile.presentation.common.GeneratingSkeleton
+import dev.chungjungsoo.gptmobile.presentation.common.GlowingDrawingCanvas
 import dev.chungjungsoo.gptmobile.presentation.common.PlatformCheckBoxItem
 import dev.chungjungsoo.gptmobile.presentation.icons.SolarIcons
 import dev.chungjungsoo.gptmobile.presentation.ui.offlinemodel.OfflineModelViewModel
@@ -368,6 +370,11 @@ fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
+        // Animated Rainbow Drawing Canvas Section - Top Priority
+        item {
+            AnimatedRainbowCanvasSection()
+        }
+
         // Border Settings Section - Top Priority
         item {
             BorderSettingsCard(
@@ -429,6 +436,61 @@ fun HomeContent(
                     onClick = { onExistingChatClick(chatRoom) }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun AnimatedRainbowCanvasSection() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "🎨",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                Column {
+                    Text(
+                        text = "Interactive Rainbow Canvas",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Draw rainbow shapes and circles with glowing effects",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Interactive Canvas
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black)
+            ) {
+                GlowingDrawingCanvas()
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "✨ Draw circles for white glowing effects, or shapes for animated rainbow borders",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
